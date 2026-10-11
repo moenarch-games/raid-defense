@@ -78,6 +78,10 @@ jobs:
         working-directory: visualization
         run: bun run lint
 
+      - name: Unit and architecture checks for the browser composition layer
+        working-directory: visualization
+        run: bun run test:unit
+
       - name: Build Rust/WASM/browser workflow
         working-directory: visualization
         run: bun run build
