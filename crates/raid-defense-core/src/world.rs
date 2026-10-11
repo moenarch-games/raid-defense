@@ -269,11 +269,27 @@ impl GameState {
         site: EntityId,
         worker_start: Cell,
     ) -> Option<EntityId> {
+        self.nearest_storage_with_wood_for_site_among(
+            site,
+            worker_start,
+            &self.settlement_storage_ids(),
+        )
+    }
+
+    /// Like [`Self::nearest_storage_with_wood_for_site`], but only examines
+    /// `storage_ids` (settlement storage nodes, e.g. a per-tick index of the
+    /// stocked ones). The choice among the examined nodes is identical.
+    pub(super) fn nearest_storage_with_wood_for_site_among(
+        &self,
+        site: EntityId,
+        worker_start: Cell,
+        storage_ids: &[EntityId],
+    ) -> Option<EntityId> {
         let site_cell = self.buildings.get(entity_key(site))?.cell;
         let site_goals = self.adjacent_walkable_cells(site_cell, None);
-        let mut candidates = self
-            .settlement_storage_ids()
-            .into_iter()
+        let mut candidates = storage_ids
+            .iter()
+            .copied()
             .filter_map(|entity| {
                 self.count_work(|work| work.logistics_candidate_searches += 1);
                 let storage = self.storage.get(entity_key(entity))?;
