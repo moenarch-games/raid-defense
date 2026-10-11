@@ -11,7 +11,8 @@
     "build": "bun run build:wasm && bun run typecheck && vite build",
     "typecheck": "tsc --noEmit",
     "i18n:check": "bun src/localization.check.ts",
-    "lint": "bun run i18n:check && bunx oxlint@1.80.0 src e2e --format=github",
+    "lint": "bun run i18n:check && bunx oxlint@1.80.0 src e2e test --format=github",
+    "test:unit": "bun test ./test",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "e2e": "playwright test"
   },
