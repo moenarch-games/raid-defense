@@ -91,13 +91,27 @@ The core exposes `GameState::work_counters()`, a `WorkCounters` value accumulate
 | `navigation_cells_visited` | Cells expanded by those builds. | At most one grid sweep per rebuild. |
 | `path_follow_steps` | Per-agent next-step lookups against retained fields. | Linear in active agents. |
 | `target_candidate_evaluations` | Raiders examined by tower targeting. | Follows the raiders in the cells covered by each tower's range square, not total raiders. |
-| `logistics_candidate_searches` | Worker/forest/sawmill/storage/site candidates examined by logistics selection. | Reported separately from movement; the population scaling bound is a follow-up of #38. |
+| `logistics_candidate_searches` | Worker/forest/sawmill/storage/site candidates examined by logistics selection. | At most `2 · C` per assignment plus one sweep of the `C` relevant candidates (forests, sawmills, settlement storage, construction sites) per tick, however many workers idle. One exception: a construction hauler still re-selects its source storage on every movement step. |
 | `policy_validation_probes` | Candidate commands the simulator policy validated. | Policy-dependent. |
 | `world_clones` | Full game-state clones made while probing candidates. | Must stay `0` unless an explicit, reviewed O(N) clone contract is declared. |
 
 Navigation is retained per goal-cell set inside each `GameState` and discarded whenever a building is inserted. Placement validation builds fields for the hypothetical blocked topology once per goal set, so its cost does not grow with the number of raiders or workers. Every retained answer is identical to the from-scratch breadth-first search (same neighbor order and tie-breaking), which is pinned by oracle unit tests and baseline checksums.
 
-The counters are declared in `.performance/contract.json` as non-blocking operation-count metrics. Their scaling shapes are enforced by `crates/raid-defense-core/tests/scaling_contracts.rs`, and their reporting and byte-identical determinism by `crates/raid-defense-sim/tests/work_counters_report.rs` and `scripts/performance-smoke.sh`.
+Idle-worker assignment builds a per-tick logistics candidate index the first time an idle worker needs a decision in a tick. One sweep records the open construction sites, the stocked settlement storage, the sawmills with free capacity or unreserved stock, and the forests with unreserved stock. Each reservation prunes an exhausted entry, so a worker with nothing assignable examines no candidates. Every decision applies the same filters and tie-breaking to the indexed candidates as a full scan would, which the per-tick checksum traces in `crates/raid-defense-core/tests/logistics_targeting_contracts.rs` pin.
+
+`.performance/contract.json` (coding-tooling schemaVersion 2) declares the counters in two ways. Its `scenarios` keep them as non-blocking metrics of the representative journeys, where wall-clock time stays advisory. Its `operations` declare them as executable growth and budget contracts:
+
+| Operation | Varied dimension | Declaration |
+| --- | --- | --- |
+| `raid-tick-navigation` | raiders (8, 16, 32) | `flow_field_rebuilds` and `navigation_cells_visited` constant, `path_follow_steps` linear |
+| `tower-targeting` | raiders (4, 10, 16; only the four gate raiders are local) | `target_candidate_evaluations` constant |
+| `worker-logistics` | workers (2, 12) over fixed stock | `logistics_candidate_searches` linear (two points, so search work per worker must not grow) |
+| `idle-workers-exhausted-stock` | workers (2, 4, 8, 12), all idle | `logistics_candidate_searches` constant |
+| `policy-journey` | ticks (1000, 2000, 4000) | `world_clones` budget max 0 |
+
+The `performance:work` capability in `.coding-tooling.json` runs `scripts/performance-work.sh`. The script hashes the contract and prints `coding-tooling/work-evidence/v1` from `raid-defense-sim --work-evidence --contract-sha256 <sha256>`. `coding-tooling performance work --root .` evaluates that evidence, and `.performance/applicability.json` wires it as the `work-complexity` family. The checks cover the declared scale points only.
+
+These shapes are enforced inside `cargo test` too. `crates/raid-defense-core/tests/scaling_contracts.rs` and `logistics_targeting_contracts.rs` hold the counter bounds. `crates/raid-defense-sim/tests/work_budget_contract.rs` checks the declarations, and `work_evidence_collector.rs` checks that the collector's evidence matches them and meets every bound. `crates/raid-defense-sim/tests/work_counters_report.rs` and `scripts/performance-smoke.sh` check reporting and byte-identical determinism.
 
 ## ECS direction
 

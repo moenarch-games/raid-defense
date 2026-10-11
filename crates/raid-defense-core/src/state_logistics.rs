@@ -360,6 +360,11 @@ impl GameState {
             }
         }
 
+        // The index is built lazily, at most once per tick, the first time an
+        // idle worker needs a decision. Assignment itself never changes stored
+        // wood, towers or buildings, so the start-independent facts it holds
+        // stay valid for the whole loop; reservations prune it as they grow.
+        let mut index: Option<LogisticsIndex> = None;
         let mut ids = self.people.keys().map(key_entity).collect::<Vec<_>>();
         ids.sort_unstable();
         for entity in ids {
@@ -370,10 +375,18 @@ impl GameState {
                 continue;
             }
             let start = self.person_cell(entity);
+            let index = index.get_or_insert_with(|| {
+                self.logistics_index(
+                    &reserved_construction,
+                    &reserved_sawmills,
+                    &reserved_forests,
+                )
+            });
 
-            if let Some(site) = self.best_construction_for_person(&reserved_construction)
+            if let Some(site) = index.open_sites.keys().next().copied()
+                && self.examine_candidate()
                 && self
-                    .nearest_storage_with_wood_for_site(site, start)
+                    .nearest_storage_with_wood_for_site_among(site, start, &index.stocked_storage)
                     .is_some()
             {
                 person.state = PersonState::ToConstructionStorage;
@@ -382,10 +395,11 @@ impl GameState {
                 self.rebuild_person_movement(entity, person);
                 let entry = reserved_construction.entry(site).or_default();
                 *entry = entry.saturating_add(u32::from(person.cargo_capacity));
+                index.prune(LogisticsPool::Sites, site, *entry);
                 continue;
             }
 
-            if let Some(target) = self.best_sawmill_for_person(&reserved_sawmills) {
+            if let Some(target) = self.best_sawmill_for_person(index, &reserved_sawmills) {
                 let goals = self.sawmill_pickup_cells(target, None);
                 if let Some(next) = self.next_path_step_to_any(start, &goals, None) {
                     person.state = PersonState::ToSawmillPickup;
@@ -402,6 +416,7 @@ impl GameState {
                     );
                     let entry = reserved_sawmills.entry(target).or_default();
                     *entry = entry.saturating_add(u32::from(person.cargo_capacity));
+                    index.prune(LogisticsPool::SawmillPickups, target, *entry);
                     continue;
                 }
             }
@@ -409,7 +424,7 @@ impl GameState {
             let harvest_amount =
                 u32::from(person.cargo_capacity.min(self.rules.economy.sawmill_output));
             let Some(forest) =
-                self.best_forest_for_person(start, harvest_amount, &reserved_forests)
+                self.best_forest_for_person(index, start, harvest_amount, &reserved_forests)
             else {
                 continue;
             };
@@ -431,71 +446,121 @@ impl GameState {
             );
             let entry = reserved_forests.entry(forest).or_default();
             *entry = entry.saturating_add(harvest_amount);
+            index.prune(LogisticsPool::Forests, forest, *entry);
         }
     }
 
-    pub(super) fn best_construction_for_person(
-        &self,
-        reserved: &BTreeMap<EntityId, u32>,
-    ) -> Option<EntityId> {
-        self.construction_sites().into_iter().find(|site| {
-            self.count_work(|work| work.logistics_candidate_searches += 1);
-            let remaining = self.construction_remaining(*site);
-            let reserved = reserved.get(site).copied().unwrap_or(0);
-            remaining.saturating_sub(reserved) > 0
-        })
+    /// Count one logistics candidate examination. Returns `true` so it can be
+    /// chained into a condition.
+    fn examine_candidate(&self) -> bool {
+        self.count_work(|work| work.logistics_candidate_searches += 1);
+        true
     }
 
-    pub(super) fn best_sawmill_for_person(
+    /// One sweep over every relevant logistics candidate (construction sites,
+    /// sawmills, settlement storage and forests), keeping only those that can
+    /// still serve an idle worker given the current reservations. Each
+    /// candidate is examined once, so the sweep costs `C` searches per tick
+    /// regardless of how many workers are idle.
+    fn logistics_index(
         &self,
+        reserved_construction: &BTreeMap<EntityId, u32>,
+        reserved_sawmills: &BTreeMap<EntityId, u32>,
+        reserved_forests: &BTreeMap<EntityId, u32>,
+    ) -> LogisticsIndex {
+        let mut index = LogisticsIndex::default();
+        for site in self.construction_sites() {
+            self.examine_candidate();
+            let remaining = self.construction_remaining(site);
+            let reserved = reserved_construction.get(&site).copied().unwrap_or(0);
+            if remaining > reserved {
+                index.open_sites.insert(site, remaining);
+            }
+        }
+        for entity in self.settlement_storage_ids() {
+            self.examine_candidate();
+            if self
+                .storage
+                .get(entity_key(entity))
+                .is_some_and(|storage| storage.wood > 0)
+            {
+                index.stocked_storage.push(entity);
+            }
+        }
+        let mut sawmills = self.producers.keys().map(key_entity).collect::<Vec<_>>();
+        sawmills.sort_unstable();
+        for entity in sawmills {
+            self.examine_candidate();
+            let Some(storage) = self.storage.get(entity_key(entity)) else {
+                continue;
+            };
+            if storage.wood < storage.wood_capacity {
+                index.sawmills_with_capacity.push(entity);
+            }
+            let reserved = reserved_sawmills.get(&entity).copied().unwrap_or(0);
+            if storage.wood > reserved {
+                index.sawmill_pickups.insert(entity, storage.wood);
+            }
+        }
+        for (key, building) in self.buildings.iter() {
+            if building.kind != BuildingKind::Forest {
+                continue;
+            }
+            self.examine_candidate();
+            let entity = key_entity(key);
+            let Some(storage) = self.storage.get(key) else {
+                continue;
+            };
+            let reserved = reserved_forests.get(&entity).copied().unwrap_or(0);
+            if storage.wood > reserved {
+                index.forests.insert(entity, storage.wood);
+            }
+        }
+        index
+    }
+
+    fn best_sawmill_for_person(
+        &self,
+        index: &LogisticsIndex,
         reserved: &BTreeMap<EntityId, u32>,
     ) -> Option<EntityId> {
-        let mut candidates = self
-            .producers
-            .keys()
-            .map(key_entity)
-            .filter_map(|entity| {
-                self.count_work(|work| work.logistics_candidate_searches += 1);
-                let stored = self.storage.get(entity_key(entity))?.wood;
-                let reserved = reserved.get(&entity).copied().unwrap_or(0);
-                let available = stored.saturating_sub(reserved);
-                (available > 0).then_some((available, entity))
+        // Highest unreserved stock first, ties by the lowest entity id.
+        index
+            .sawmill_pickups
+            .iter()
+            .map(|(entity, stored)| {
+                self.examine_candidate();
+                let available = stored.saturating_sub(reserved.get(entity).copied().unwrap_or(0));
+                (std::cmp::Reverse(available), *entity)
             })
-            .collect::<Vec<_>>();
-        candidates.sort_by_key(|(available, entity)| (std::cmp::Reverse(*available), *entity));
-        candidates.first().map(|(_, entity)| *entity)
+            .min()
+            .map(|(_, entity)| entity)
     }
 
     fn best_forest_for_person(
         &self,
+        index: &LogisticsIndex,
         start: Cell,
         harvest_amount: u32,
         reserved: &BTreeMap<EntityId, u32>,
     ) -> Option<EntityId> {
-        self.nearest_sawmill_with_capacity(start)?;
-        let mut candidates = self
-            .buildings
-            .iter()
-            .filter_map(|(key, building)| {
-                if building.kind != BuildingKind::Forest {
-                    return None;
-                }
-                self.count_work(|work| work.logistics_candidate_searches += 1);
-                let storage = self.storage.get(key)?;
-                let entity = key_entity(key);
-                let reserved_wood = reserved.get(&entity).copied().unwrap_or(0);
-                let available = storage.wood.saturating_sub(reserved_wood);
-                if available == 0 {
-                    return None;
-                }
-                let goals = self.forest_goal_cells(entity, None);
+        if index.forests.is_empty() || index.sawmills_with_capacity.is_empty() {
+            return None;
+        }
+        self.nearest_sawmill_among(start, true, &index.sawmills_with_capacity)?;
+        index
+            .forests
+            .keys()
+            .filter_map(|entity| {
+                self.examine_candidate();
+                let reserved_wood = reserved.get(entity).copied().unwrap_or(0);
+                let goals = self.forest_goal_cells(*entity, None);
                 let distance = self.path_distance_to_any(start, &goals, None)?;
                 let reserved_batches = reserved_wood.checked_div(harvest_amount).unwrap_or(0);
-                Some((reserved_batches, reserved_wood, distance, entity))
+                Some((reserved_batches, reserved_wood, distance, *entity))
             })
-            .collect::<Vec<_>>();
-        candidates.sort_unstable();
-        candidates.first().map(|(_, _, _, entity)| *entity)
+            .min()
+            .map(|(_, _, _, entity)| entity)
     }
 
     fn nearest_sawmill_with_capacity(&self, start: Cell) -> Option<EntityId> {
@@ -507,10 +572,21 @@ impl GameState {
     }
 
     fn nearest_sawmill_matching(&self, start: Cell, require_capacity: bool) -> Option<EntityId> {
-        let mut candidates = self
-            .producers
-            .keys()
-            .map(key_entity)
+        let sawmills = self.producers.keys().map(key_entity).collect::<Vec<_>>();
+        self.nearest_sawmill_among(start, require_capacity, &sawmills)
+    }
+
+    /// Nearest reachable sawmill among `sawmills` (optionally only those with
+    /// free local capacity), ties by the lowest entity id.
+    fn nearest_sawmill_among(
+        &self,
+        start: Cell,
+        require_capacity: bool,
+        sawmills: &[EntityId],
+    ) -> Option<EntityId> {
+        let mut candidates = sawmills
+            .iter()
+            .copied()
             .filter_map(|entity| {
                 self.count_work(|work| work.logistics_candidate_searches += 1);
                 let storage = self.storage.get(entity_key(entity))?;
@@ -616,5 +692,48 @@ impl GameState {
             return Vec::new();
         };
         self.adjacent_walkable_cells(building.cell, extra_block)
+    }
+}
+
+/// Start-independent logistics candidates for one tick's idle-worker
+/// assignment pass. Every entry can still serve a worker under the current
+/// reservations; entries are pruned as soon as reservations exhaust them, so
+/// an idle worker with nothing assignable examines no candidates at all.
+#[derive(Default)]
+struct LogisticsIndex {
+    /// Construction site -> remaining build requirement, for sites whose
+    /// requirement exceeds the wood already reserved for them.
+    open_sites: BTreeMap<EntityId, u32>,
+    /// Settlement storage nodes holding wood, in ascending entity order.
+    stocked_storage: Vec<EntityId>,
+    /// Sawmills with free local capacity, in ascending entity order.
+    sawmills_with_capacity: Vec<EntityId>,
+    /// Sawmill -> stored wood, for sawmills with unreserved stock.
+    sawmill_pickups: BTreeMap<EntityId, u32>,
+    /// Forest -> stock, for forests with unreserved stock.
+    forests: BTreeMap<EntityId, u32>,
+}
+
+#[derive(Clone, Copy)]
+enum LogisticsPool {
+    Sites,
+    SawmillPickups,
+    Forests,
+}
+
+impl LogisticsIndex {
+    /// Drop `entity` from `pool` once `reserved` covers its whole amount.
+    fn prune(&mut self, pool: LogisticsPool, entity: EntityId, reserved: u32) {
+        let entries = match pool {
+            LogisticsPool::Sites => &mut self.open_sites,
+            LogisticsPool::SawmillPickups => &mut self.sawmill_pickups,
+            LogisticsPool::Forests => &mut self.forests,
+        };
+        if entries
+            .get(&entity)
+            .is_some_and(|amount| *amount <= reserved)
+        {
+            entries.remove(&entity);
+        }
     }
 }

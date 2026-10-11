@@ -5,19 +5,21 @@
     "fast": ["format:check", "lint", "build", "test:unit"],
     "integration": ["test:integration"],
     "e2e": ["test:e2e"],
-    "performance": ["benchmark:smoke"]
+    "performance": ["benchmark:smoke", "performance:work"]
   },
   "requiredCapabilities": [
     "format:check",
     "lint",
     "build",
     "test:unit",
-    "benchmark:smoke"
+    "benchmark:smoke",
+    "performance:work"
   ],
   "optionalCapabilities": ["test:integration", "test:e2e"],
   "capabilityCommands": {
     ".": {
-      "benchmark:smoke": ["bash", "scripts/performance-smoke.sh"]
+      "benchmark:smoke": ["bash", "scripts/performance-smoke.sh"],
+      "performance:work": ["bash", "scripts/performance-work.sh"]
     }
   },
   "merge": {
