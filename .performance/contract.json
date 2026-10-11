@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "suite": "raid-defense/headless-simulation-v1",
-  "description": "Product-level deterministic simulation journeys covering economy/logistics/combat composition. Repeated textual simulation results (including the per-run `work` counter line) are the correctness gate; hosted-linux wall-clock timing is advisory. Deterministic work counters are reported by the simulator; their scaling shapes are enforced by crates/raid-defense-core/tests/scaling_contracts.rs and their reporting/determinism by crates/raid-defense-sim/tests/work_counters_report.rs.",
+  "description": "Product-level deterministic simulation journeys covering economy/logistics/combat composition. Repeated textual simulation results (including the per-run `work` counter line) are the correctness gate; hosted-linux wall-clock timing is advisory. The stable deterministic work counters are declared as executable growth/budget contracts in `operations` and evaluated by `coding-tooling performance work` from the `performance:work` evidence collector (scripts/performance-work.sh, `raid-defense-sim --work-evidence`). The same shapes are enforced by crates/raid-defense-core/tests/scaling_contracts.rs and logistics_targeting_contracts.rs; reporting/determinism by crates/raid-defense-sim/tests/work_counters_report.rs.",
   "scenarios": [
     {
       "id": "balanced-representative",
@@ -65,7 +65,7 @@
           "direction": "lower",
           "signal": "operation-count",
           "blocking": false,
-          "notes": "Worker/resource/storage/site candidates examined by logistics assignment, reported separately from path-follow work. Population scaling bound is a follow-up of #38."
+          "notes": "Worker/resource/storage/site candidates examined by logistics assignment, reported separately from path-follow work. Idle-worker assignment uses a per-tick candidate index, so searches follow assignments x relevant candidates plus one candidate sweep per tick, not idle-worker-ticks. Enforced by crates/raid-defense-core/tests/logistics_targeting_contracts.rs and the worker-logistics operation."
         },
         {
           "name": "policy_validation_probes",
@@ -146,7 +146,7 @@
           "direction": "lower",
           "signal": "operation-count",
           "blocking": false,
-          "notes": "Worker/resource/storage/site candidates examined by logistics assignment, reported separately from path-follow work. Population scaling bound is a follow-up of #38."
+          "notes": "Worker/resource/storage/site candidates examined by logistics assignment, reported separately from path-follow work. Idle-worker assignment uses a per-tick candidate index, so searches follow assignments x relevant candidates plus one candidate sweep per tick, not idle-worker-ticks. Enforced by crates/raid-defense-core/tests/logistics_targeting_contracts.rs and the worker-logistics operation."
         },
         {
           "name": "policy_validation_probes",
@@ -163,6 +163,199 @@
           "signal": "operation-count",
           "blocking": false,
           "notes": "Full game-state clones/materialisations made while probing candidate commands; must be 0 (no explicit O(N) clone contract)."
+        }
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "id": "raid-tick-navigation",
+      "description": "Advance 80 raid ticks under unchanged navigation topology with N slow, unkillable basic raiders on the field (economy paused, Town Hall cannot fall). Mirrors scaling_contracts.rs.",
+      "dimensions": {
+        "raiders": {
+          "description": "basic raiders alive and moving during the measured window"
+        }
+      },
+      "scalePoints": [
+        {
+          "raiders": 8
+        },
+        {
+          "raiders": 16
+        },
+        {
+          "raiders": 32
+        }
+      ],
+      "metrics": [
+        {
+          "name": "flow_field_rebuilds",
+          "unit": "rebuilds",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "raiders",
+              "bound": "constant"
+            }
+          ],
+          "notes": "Retained navigation: no grid-wide rebuild while topology is unchanged, whatever the raider count."
+        },
+        {
+          "name": "navigation_cells_visited",
+          "unit": "cells",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "raiders",
+              "bound": "constant"
+            }
+          ],
+          "notes": "No navigation sweep while topology is unchanged."
+        },
+        {
+          "name": "path_follow_steps",
+          "unit": "steps",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "raiders",
+              "bound": "linear"
+            }
+          ],
+          "notes": "Per-agent next-step lookups against retained navigation; linear in active raiders."
+        }
+      ]
+    },
+    {
+      "id": "tower-targeting",
+      "description": "A level-1 arrow tower guards the north gate over a 22-tick window. Four near-stationary gate raiders (one inside the tower range) plus N-4 fast raiders walking away from it; targeting follows the local candidate set. Mirrors logistics_targeting_contracts.rs.",
+      "dimensions": {
+        "raiders": {
+          "description": "raiders alive in the wave; only the four gate raiders are local to the tower"
+        }
+      },
+      "scalePoints": [
+        {
+          "raiders": 4
+        },
+        {
+          "raiders": 10
+        },
+        {
+          "raiders": 16
+        }
+      ],
+      "metrics": [
+        {
+          "name": "target_candidate_evaluations",
+          "unit": "candidates",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "raiders",
+              "bound": "constant"
+            }
+          ],
+          "notes": "Raider candidates examined by tower targeting; constant while only distant raiders grow."
+        }
+      ]
+    },
+    {
+      "id": "worker-logistics",
+      "description": "N workers run 1200 ticks of logistics over fixed, finite resources: every seeded forest holds two harvest batches and does not regrow inside the window, one sawmill, Town Hall storage only. Assignments are bounded by the fixed stock. Mirrors logistics_targeting_contracts.rs.",
+      "dimensions": {
+        "workers": {
+          "description": "people in the settlement (base capacity and starting people)"
+        }
+      },
+      "scalePoints": [
+        {
+          "workers": 2
+        },
+        {
+          "workers": 12
+        }
+      ],
+      "metrics": [
+        {
+          "name": "logistics_candidate_searches",
+          "unit": "candidates",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "workers",
+              "bound": "linear"
+            }
+          ],
+          "notes": "Candidates examined by logistics assignment and next-leg selection. Two points, so the linear bound is the ratio check: search work per worker must not grow with the crew. Idle workers re-scanning every candidate every tick would violate it."
+        }
+      ]
+    },
+    {
+      "id": "idle-workers-exhausted-stock",
+      "description": "The worker-logistics settlement after its fixed stock is worked out (2400 warm-up ticks): every worker idles at the Town Hall with nothing assignable for 600 measured ticks.",
+      "dimensions": {
+        "workers": {
+          "description": "people in the settlement (base capacity and starting people)"
+        }
+      },
+      "scalePoints": [
+        {
+          "workers": 2
+        },
+        {
+          "workers": 4
+        },
+        {
+          "workers": 8
+        },
+        {
+          "workers": 12
+        }
+      ],
+      "metrics": [
+        {
+          "name": "logistics_candidate_searches",
+          "unit": "candidates",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "workers",
+              "bound": "constant"
+            }
+          ],
+          "notes": "The per-tick candidate index sweeps the relevant candidates once per tick, whatever the number of idle workers; an idle worker with nothing assignable examines no candidates."
+        }
+      ]
+    },
+    {
+      "id": "policy-journey",
+      "description": "Run the balanced headless policy (seed 41) through economy growth, construction and waves for N ticks.",
+      "dimensions": {
+        "ticks": {
+          "description": "simulated ticks"
+        }
+      },
+      "scalePoints": [
+        {
+          "ticks": 1000
+        },
+        {
+          "ticks": 2000
+        },
+        {
+          "ticks": 4000
+        }
+      ],
+      "metrics": [
+        {
+          "name": "world_clones",
+          "unit": "clones",
+          "signal": "operation-count",
+          "budget": {
+            "max": 0
+          },
+          "notes": "Candidate commands are validated against the authoritative state in place; no explicit O(N) clone contract exists."
         }
       ]
     }

@@ -5,6 +5,8 @@ use raid_defense_core::{
     WorkCounters,
 };
 
+mod work_evidence;
+
 const DEFAULT_SEED: u64 = 1;
 const DEFAULT_RUNS: u32 = 1;
 const DEFAULT_TICKS: u64 = 4_000;
@@ -288,6 +290,20 @@ fn run_cli() -> Result<(), String> {
         return Ok(());
     }
 
+    if args
+        .first()
+        .is_some_and(|argument| argument == "--work-evidence")
+    {
+        let [_, flag, sha] = args.as_slice() else {
+            return Err("usage: --work-evidence --contract-sha256 <sha256>".to_owned());
+        };
+        if flag != "--contract-sha256" {
+            return Err(format!("unknown argument {flag:?} after --work-evidence"));
+        }
+        println!("{}", work_evidence::render(sha)?);
+        return Ok(());
+    }
+
     let config = Config::parse(&args)?;
     let capacity = usize::try_from(config.runs).expect("run count fits usize");
     let mut results = Vec::with_capacity(capacity);
@@ -303,7 +319,7 @@ fn print_help() {
     println!(
         "Raid Defense headless balance simulator\n\n\
 Usage:\n  cargo run -p raid-defense-sim -- [options]\n\n\
-Options:\n  --seed <u64>       First deterministic world seed (default: {DEFAULT_SEED})\n  --runs <u32>       Number of consecutive seeds to simulate (default: {DEFAULT_RUNS})\n  --ticks <u64>      Maximum ticks per run (default: {DEFAULT_TICKS})\n  --policy <name>    passive | economy | balanced | defense (default: balanced)\n  -h, --help         Show this help\n\n\
+Options:\n  --seed <u64>       First deterministic world seed (default: {DEFAULT_SEED})\n  --runs <u32>       Number of consecutive seeds to simulate (default: {DEFAULT_RUNS})\n  --ticks <u64>      Maximum ticks per run (default: {DEFAULT_TICKS})\n  --policy <name>    passive | economy | balanced | defense (default: balanced)\n  --work-evidence --contract-sha256 <sha256>\n                     Print coding-tooling/work-evidence/v1 for the\n                     operations in .performance/contract.json\n  -h, --help         Show this help\n\n\
 Examples:\n  cargo run -p raid-defense-sim -- --seed 42 --ticks 6000 --policy balanced\n  cargo run -p raid-defense-sim -- --seed 100 --runs 32 --ticks 10000 --policy economy"
     );
 }
