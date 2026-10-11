@@ -8,3 +8,6 @@ default-run = "raid-defense-sim"
 
 [dependencies]
 raid-defense-core = { path = "../raid-defense-core" }
+
+[dev-dependencies]
+serde_json.workspace = true
