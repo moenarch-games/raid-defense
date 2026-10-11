@@ -65,7 +65,10 @@ jobs:
         run: rustup toolchain install 1.98.0 --profile minimal
 
       - name: Install wasm-pack
-        run: cargo install wasm-pack --version 0.14.0 --locked
+        uses: moritzbrantner/reusable-workflows/.github/actions/install-verified-wasm-cli@e60855ad67f3dad72c283c355d544d6d296241d7
+        with:
+          tool: wasm-pack
+          version: "0.14.0"
 
       - name: Install browser dependencies
         working-directory: visualization
@@ -96,7 +99,10 @@ jobs:
         run: rustup toolchain install 1.98.0 --profile minimal
 
       - name: Install wasm-pack
-        run: cargo install wasm-pack --version 0.14.0 --locked
+        uses: moritzbrantner/reusable-workflows/.github/actions/install-verified-wasm-cli@e60855ad67f3dad72c283c355d544d6d296241d7
+        with:
+          tool: wasm-pack
+          version: "0.14.0"
 
       - name: Install browser dependencies
         working-directory: visualization
