@@ -288,58 +288,6 @@ impl GameState {
         self.adjacent_walkable_cells(sawmill_cell, extra_block)
     }
 
-    pub(super) fn next_path_step_to_any(
-        &self,
-        start: Cell,
-        goals: &[Cell],
-        extra_block: Option<Cell>,
-    ) -> Option<Cell> {
-        if goals.contains(&start) {
-            return Some(start);
-        }
-        if !in_bounds(start) || goals.is_empty() {
-            return None;
-        }
-
-        let cell_count = usize::try_from(GRID_WIDTH).ok()? * usize::try_from(GRID_HEIGHT).ok()?;
-        let mut visited = vec![false; cell_count];
-        let mut parent = vec![None; cell_count];
-        let mut queue = VecDeque::new();
-        let start_index = cell_index(start)?;
-        visited[start_index] = true;
-        queue.push_back(start);
-
-        let mut goal = None;
-        while let Some(cell) = queue.pop_front() {
-            if goals.contains(&cell) {
-                goal = Some(cell);
-                break;
-            }
-            for neighbor in neighbors(cell) {
-                let index = cell_index(neighbor)?;
-                if visited[index] || self.path_cell_blocked(neighbor, extra_block) {
-                    continue;
-                }
-                visited[index] = true;
-                parent[index] = Some(cell);
-                queue.push_back(neighbor);
-            }
-        }
-
-        let mut cursor = goal?;
-        if cursor == start {
-            return Some(start);
-        }
-        loop {
-            let cursor_index = cell_index(cursor)?;
-            let previous = parent[cursor_index]?;
-            if previous == start {
-                return Some(cursor);
-            }
-            cursor = previous;
-        }
-    }
-
     pub(super) fn path_cell_blocked(&self, cell: Cell, extra_block: Option<Cell>) -> bool {
         !is_town_cell(cell) && (extra_block == Some(cell) || self.cell_has_building(cell))
     }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "suite": "raid-defense/headless-simulation-v1",
-  "description": "Product-level deterministic simulation journeys covering economy/logistics/combat composition. Repeated textual simulation results are the correctness gate; hosted-linux wall-clock timing is advisory until internal targeting/path/logistics work counters are exposed.",
+  "description": "Product-level deterministic simulation journeys covering economy/logistics/combat composition. Repeated textual simulation results (including the per-run `work` counter line) are the correctness gate; hosted-linux wall-clock timing is advisory. Deterministic work counters are reported by the simulator; their scaling shapes are enforced by crates/raid-defense-core/tests/scaling_contracts.rs and their reporting/determinism by crates/raid-defense-sim/tests/work_counters_report.rs.",
   "scenarios": [
     {
       "id": "balanced-representative",
@@ -16,7 +16,8 @@
       "correctnessEvidence": [
         "byte-identical simulator report across repeated executions",
         "deterministic final checksum",
-        "full requested horizon or explicit deterministic town destruction"
+        "full requested horizon or explicit deterministic town destruction",
+        "deterministic work counters identical across reruns"
       ],
       "metrics": [
         {
@@ -27,20 +28,44 @@
           "blocking": false
         },
         {
-          "name": "target_candidates",
+          "name": "flow_field_rebuilds",
+          "unit": "rebuilds",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Grid-wide navigation computations (flow fields and from-scratch grid searches). Constant w.r.t. agent count under unchanged topology; topology/goal changes may rebuild per goal. Enforced by crates/raid-defense-core/tests/scaling_contracts.rs."
+        },
+        {
+          "name": "navigation_cells_visited",
+          "unit": "cells",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Cells expanded by navigation rebuilds; at most one grid sweep per rebuild. Enforced by crates/raid-defense-core/tests/scaling_contracts.rs."
+        },
+        {
+          "name": "path_follow_steps",
+          "unit": "steps",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Per-agent next-step lookups against retained navigation; may scale linearly with active agents."
+        },
+        {
+          "name": "target_candidate_evaluations",
           "unit": "candidates",
           "direction": "lower",
           "signal": "operation-count",
           "blocking": false,
-          "notes": "Instrumentation prerequisite: expose deterministic tower/raider targeting candidate work before enabling a blocking budget."
+          "notes": "Raider candidates examined by tower targeting; follows the local candidate set, not total raiders. Enforced by crates/raid-defense-core/tests/scaling_contracts.rs."
         },
         {
-          "name": "path_searches",
-          "unit": "searches",
+          "name": "logistics_candidate_searches",
+          "unit": "candidates",
           "direction": "lower",
           "signal": "operation-count",
           "blocking": false,
-          "notes": "Instrumentation prerequisite: count worker/raider path or flow-field rebuild/reuse work."
+          "notes": "Worker/resource/storage/site candidates examined by logistics assignment, reported separately from path-follow work. Population scaling bound is a follow-up of #38."
         },
         {
           "name": "policy_validation_probes",
@@ -48,7 +73,15 @@
           "direction": "lower",
           "signal": "operation-count",
           "blocking": false,
-          "notes": "The current headless policy probes candidate commands by cloning state; count these probes so future removal/reuse work is measurable."
+          "notes": "Candidate player commands validated by the headless policy."
+        },
+        {
+          "name": "world_clones",
+          "unit": "clones",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Full game-state clones/materialisations made while probing candidate commands; must be 0 (no explicit O(N) clone contract)."
         }
       ]
     },
@@ -64,7 +97,8 @@
       },
       "correctnessEvidence": [
         "byte-identical simulator report across repeated executions",
-        "deterministic final checksum"
+        "deterministic final checksum",
+        "deterministic work counters identical across reruns"
       ],
       "metrics": [
         {
@@ -75,20 +109,60 @@
           "blocking": false
         },
         {
-          "name": "target_candidates",
-          "unit": "candidates",
-          "direction": "lower",
-          "signal": "operation-count",
-          "blocking": false,
-          "notes": "Planned portable scaling guard for targeting."
-        },
-        {
           "name": "flow_field_rebuilds",
           "unit": "rebuilds",
           "direction": "lower",
           "signal": "operation-count",
           "blocking": false,
-          "notes": "Planned portable scaling guard for raider navigation-state reuse."
+          "notes": "Grid-wide navigation computations (flow fields and from-scratch grid searches). Constant w.r.t. agent count under unchanged topology; topology/goal changes may rebuild per goal. Enforced by crates/raid-defense-core/tests/scaling_contracts.rs."
+        },
+        {
+          "name": "navigation_cells_visited",
+          "unit": "cells",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Cells expanded by navigation rebuilds; at most one grid sweep per rebuild. Enforced by crates/raid-defense-core/tests/scaling_contracts.rs."
+        },
+        {
+          "name": "path_follow_steps",
+          "unit": "steps",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Per-agent next-step lookups against retained navigation; may scale linearly with active agents."
+        },
+        {
+          "name": "target_candidate_evaluations",
+          "unit": "candidates",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Raider candidates examined by tower targeting; follows the local candidate set, not total raiders. Enforced by crates/raid-defense-core/tests/scaling_contracts.rs."
+        },
+        {
+          "name": "logistics_candidate_searches",
+          "unit": "candidates",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Worker/resource/storage/site candidates examined by logistics assignment, reported separately from path-follow work. Population scaling bound is a follow-up of #38."
+        },
+        {
+          "name": "policy_validation_probes",
+          "unit": "probes",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Candidate player commands validated by the headless policy."
+        },
+        {
+          "name": "world_clones",
+          "unit": "clones",
+          "direction": "lower",
+          "signal": "operation-count",
+          "blocking": false,
+          "notes": "Full game-state clones/materialisations made while probing candidate commands; must be 0 (no explicit O(N) clone contract)."
         }
       ]
     }

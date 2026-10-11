@@ -376,6 +376,7 @@ mod simulator {
         let mut state = GameState::with_rules(seed, rules);
         let mut metrics = TickMetrics::default();
         let mut commands_applied = 0_u64;
+        let mut policy_work = PolicyWork::default();
 
         while state.tick() < tick_limit && state.town_health() != 0 {
             if let Some(next_tick) = next_manual_wave_tick
@@ -389,7 +390,7 @@ mod simulator {
                 next_manual_wave_tick = None;
             }
 
-            if let Some(command) = policy.choose_action(&state) {
+            if let Some(command) = policy.choose_action(&state, &mut policy_work) {
                 state.apply(command).expect(
                     "a command accepted by the deterministic policy probe must remain valid",
                 );
@@ -433,6 +434,8 @@ mod simulator {
             commands_applied,
             metrics,
             checksum: state.checksum(),
+            work: state.work_counters(),
+            policy_work,
         }
     }
 

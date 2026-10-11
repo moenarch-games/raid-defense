@@ -439,6 +439,7 @@ impl GameState {
         reserved: &BTreeMap<EntityId, u32>,
     ) -> Option<EntityId> {
         self.construction_sites().into_iter().find(|site| {
+            self.count_work(|work| work.logistics_candidate_searches += 1);
             let remaining = self.construction_remaining(*site);
             let reserved = reserved.get(site).copied().unwrap_or(0);
             remaining.saturating_sub(reserved) > 0
@@ -454,6 +455,7 @@ impl GameState {
             .keys()
             .map(key_entity)
             .filter_map(|entity| {
+                self.count_work(|work| work.logistics_candidate_searches += 1);
                 let stored = self.storage.get(entity_key(entity))?.wood;
                 let reserved = reserved.get(&entity).copied().unwrap_or(0);
                 let available = stored.saturating_sub(reserved);
@@ -478,6 +480,7 @@ impl GameState {
                 if building.kind != BuildingKind::Forest {
                     return None;
                 }
+                self.count_work(|work| work.logistics_candidate_searches += 1);
                 let storage = self.storage.get(key)?;
                 let entity = key_entity(key);
                 let reserved_wood = reserved.get(&entity).copied().unwrap_or(0);
@@ -509,6 +512,7 @@ impl GameState {
             .keys()
             .map(key_entity)
             .filter_map(|entity| {
+                self.count_work(|work| work.logistics_candidate_searches += 1);
                 let storage = self.storage.get(entity_key(entity))?;
                 if require_capacity && storage.wood >= storage.wood_capacity {
                     return None;

@@ -6,10 +6,7 @@ impl GameState {
         cell: Cell,
         archetype: TowerArchetype,
     ) -> Result<Event, GameError> {
-        self.validate_build_cell(cell)?;
-        let cost = self.rules.tower(archetype).build_cost;
-        self.require_wood(cost)?;
-        self.validate_blocking_build(cell, None)?;
+        let cost = self.check_place_tower(cell, archetype)?;
 
         let entity = self.allocate_entity();
         self.transforms
@@ -28,6 +25,7 @@ impl GameState {
                 cell,
             },
         );
+        self.invalidate_navigation();
         self.towers.insert(
             entity_key(entity),
             Tower {
@@ -52,11 +50,8 @@ impl GameState {
     }
 
     pub(super) fn place_sawmill(&mut self, cell: Cell) -> Result<Event, GameError> {
-        self.validate_build_cell(cell)?;
+        let cost = self.check_place_sawmill(cell)?;
         let building_rules = self.rules.buildings.sawmill;
-        let cost = building_rules.wood_cost;
-        self.require_wood(cost)?;
-        self.validate_blocking_build(cell, Some(cell))?;
 
         let entity = self.allocate_entity();
         self.transforms
@@ -75,6 +70,7 @@ impl GameState {
                 cell,
             },
         );
+        self.invalidate_navigation();
         // This component is the sawmill's forestry work profile. It no longer
         // advances autonomously: people perform the actual forest harvest.
         self.producers.insert(
@@ -103,11 +99,8 @@ impl GameState {
     }
 
     pub(super) fn place_storage_house(&mut self, cell: Cell) -> Result<Event, GameError> {
-        self.validate_build_cell(cell)?;
+        let cost = self.check_place_storage_house(cell)?;
         let building_rules = self.rules.buildings.storage_house;
-        let cost = building_rules.wood_cost;
-        self.require_wood(cost)?;
-        self.validate_blocking_build(cell, None)?;
 
         let entity = self.allocate_entity();
         self.transforms
@@ -126,6 +119,7 @@ impl GameState {
                 cell,
             },
         );
+        self.invalidate_navigation();
         self.storage.insert(
             entity_key(entity),
             ResourceStorage {
@@ -144,14 +138,8 @@ impl GameState {
     }
 
     pub(super) fn place_house(&mut self, cell: Cell) -> Result<Event, GameError> {
-        if !self.houses_unlocked() {
-            return Err(GameError::HouseLocked);
-        }
-        self.validate_build_cell(cell)?;
+        let cost = self.check_place_house(cell)?;
         let house_rules = self.rules.buildings.house;
-        let cost = house_rules.wood_cost;
-        self.require_wood(cost)?;
-        self.validate_blocking_build(cell, None)?;
 
         let entity = self.allocate_entity();
         self.transforms
@@ -170,6 +158,7 @@ impl GameState {
                 cell,
             },
         );
+        self.invalidate_navigation();
         self.housing.insert(
             entity_key(entity),
             Housing {
@@ -191,23 +180,7 @@ impl GameState {
     }
 
     pub(super) fn upgrade_tower(&mut self, cell: Cell) -> Result<Event, GameError> {
-        if self.town_health() == 0 {
-            return Err(GameError::GameOver);
-        }
-        if !in_bounds(cell) {
-            return Err(GameError::OutOfBounds);
-        }
-        let entity = self.tower_entity_at(cell).ok_or(GameError::NoTower)?;
-        let tower = self
-            .towers
-            .get(entity_key(entity))
-            .copied()
-            .expect("tower buildings always have a tower component");
-        let cost = self
-            .rules
-            .tower_upgrade_cost(tower.archetype, tower.level)
-            .ok_or(GameError::MaxTowerLevel)?;
-        self.require_wood(cost)?;
+        let (entity, tower, cost) = self.check_upgrade_tower(cell)?;
 
         let next_level = tower.level + 1;
         let cooldown_remaining = self
@@ -231,6 +204,96 @@ impl GameState {
             level: next_level,
             wood_cost: cost,
         })
+    }
+
+    /// Validate a player command exactly as [`GameState::apply`] would, without
+    /// mutating authoritative state or cloning the world.
+    ///
+    /// Placement checks reuse retained navigation for the hypothetical topology,
+    /// so validation work is bounded by the grid and the number of navigation
+    /// goals rather than by the number of raiders or workers.
+    pub fn validate_command(&self, command: Command) -> Result<(), GameError> {
+        match command {
+            Command::PlaceTower { x, z, archetype } => self
+                .check_place_tower(Cell::new(x, z), archetype)
+                .map(|_| ()),
+            Command::PlaceSawmill { x, z } => self.check_place_sawmill(Cell::new(x, z)).map(|_| ()),
+            Command::PlaceStorageHouse { x, z } => {
+                self.check_place_storage_house(Cell::new(x, z)).map(|_| ())
+            }
+            Command::PlaceHouse { x, z } => self.check_place_house(Cell::new(x, z)).map(|_| ()),
+            Command::UpgradeTower { x, z } => self.check_upgrade_tower(Cell::new(x, z)).map(|_| ()),
+            Command::StartWave => self.check_start_wave().map(|_| ()),
+            Command::AdvanceTick => Ok(()),
+        }
+    }
+
+    fn check_place_tower(&self, cell: Cell, archetype: TowerArchetype) -> Result<u32, GameError> {
+        self.validate_build_cell(cell)?;
+        let cost = self.rules.tower(archetype).build_cost;
+        self.require_wood(cost)?;
+        self.validate_blocking_build(cell, None)?;
+        Ok(cost)
+    }
+
+    fn check_place_sawmill(&self, cell: Cell) -> Result<u32, GameError> {
+        self.validate_build_cell(cell)?;
+        let cost = self.rules.buildings.sawmill.wood_cost;
+        self.require_wood(cost)?;
+        self.validate_blocking_build(cell, Some(cell))?;
+        Ok(cost)
+    }
+
+    fn check_place_storage_house(&self, cell: Cell) -> Result<u32, GameError> {
+        self.validate_build_cell(cell)?;
+        let cost = self.rules.buildings.storage_house.wood_cost;
+        self.require_wood(cost)?;
+        self.validate_blocking_build(cell, None)?;
+        Ok(cost)
+    }
+
+    fn check_place_house(&self, cell: Cell) -> Result<u32, GameError> {
+        if !self.houses_unlocked() {
+            return Err(GameError::HouseLocked);
+        }
+        self.validate_build_cell(cell)?;
+        let cost = self.rules.buildings.house.wood_cost;
+        self.require_wood(cost)?;
+        self.validate_blocking_build(cell, None)?;
+        Ok(cost)
+    }
+
+    fn check_upgrade_tower(&self, cell: Cell) -> Result<(EntityId, Tower, u32), GameError> {
+        if self.town_health() == 0 {
+            return Err(GameError::GameOver);
+        }
+        if !in_bounds(cell) {
+            return Err(GameError::OutOfBounds);
+        }
+        let entity = self.tower_entity_at(cell).ok_or(GameError::NoTower)?;
+        let tower = self
+            .towers
+            .get(entity_key(entity))
+            .copied()
+            .expect("tower buildings always have a tower component");
+        let cost = self
+            .rules
+            .tower_upgrade_cost(tower.archetype, tower.level)
+            .ok_or(GameError::MaxTowerLevel)?;
+        self.require_wood(cost)?;
+        Ok((entity, tower, cost))
+    }
+
+    fn check_start_wave(&self) -> Result<(u32, u16), GameError> {
+        if self.town_health() == 0 {
+            return Err(GameError::GameOver);
+        }
+        if self.is_night() || self.is_rallying() {
+            return Err(GameError::RaidersStillActive);
+        }
+        let next_wave = self.wave.saturating_add(1);
+        let (_, raiders) = self.wave_definition(next_wave)?;
+        Ok((next_wave, raiders))
     }
 
     pub(super) fn validate_build_cell(&self, cell: Cell) -> Result<(), GameError> {
@@ -290,15 +353,7 @@ impl GameState {
     }
 
     pub(super) fn start_wave(&mut self) -> Result<Event, GameError> {
-        if self.town_health() == 0 {
-            return Err(GameError::GameOver);
-        }
-        if self.is_night() || self.is_rallying() {
-            return Err(GameError::RaidersStillActive);
-        }
-
-        let next_wave = self.wave.saturating_add(1);
-        let (_, raiders) = self.wave_definition(next_wave)?;
+        let (next_wave, raiders) = self.check_start_wave()?;
         self.day_ticks_remaining = 0;
         self.raid_rally_ticks_remaining = self.rules.cycle.raid_rally_ticks;
         self.recall_people_for_raid();

@@ -1,89 +1,25 @@
 use super::*;
 
-const UNREACHABLE_FLOW_DISTANCE: u16 = u16::MAX;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-struct RaiderFlowField {
-    distances: Vec<u16>,
+/// Live raiders bucketed by grid cell for one targeting pass.
+///
+/// Tower targeting examines only the raiders in the cells overlapped by the
+/// tower's range square, so its candidate work follows the local candidate set
+/// rather than every raider on the map.
+pub(super) struct RaiderCellIndex {
+    cells: Vec<Vec<EntityId>>,
 }
 
-impl RaiderFlowField {
-    fn build(state: &GameState, goals: &[Cell]) -> Option<Self> {
-        if goals.is_empty() {
-            return None;
-        }
-
-        let cell_count = usize::try_from(GRID_WIDTH).ok()? * usize::try_from(GRID_HEIGHT).ok()?;
-        let mut distances = vec![UNREACHABLE_FLOW_DISTANCE; cell_count];
-        let mut queue = VecDeque::new();
-        let mut ordered_goals = goals.to_vec();
-        ordered_goals.sort_unstable();
-        ordered_goals.dedup();
-
-        for goal in ordered_goals {
-            if state.path_cell_blocked(goal, None) {
-                continue;
-            }
-            let index = cell_index(goal)?;
-            if distances[index] == 0 {
-                continue;
-            }
-            distances[index] = 0;
-            queue.push_back(goal);
-        }
-
-        if queue.is_empty() {
-            return None;
-        }
-
-        while let Some(cell) = queue.pop_front() {
-            let cell_distance = distances[cell_index(cell)?];
-            let next_distance = cell_distance.saturating_add(1);
-            for neighbor in neighbors(cell) {
-                if state.path_cell_blocked(neighbor, None) {
-                    continue;
-                }
-                let index = cell_index(neighbor)?;
-                if distances[index] <= next_distance {
-                    continue;
-                }
-                distances[index] = next_distance;
-                queue.push_back(neighbor);
-            }
-        }
-
-        Some(Self { distances })
+impl RaiderCellIndex {
+    fn cell(&self, x: i16, z: i16) -> &[EntityId] {
+        cell_index(Cell::new(x, z))
+            .and_then(|index| self.cells.get(index))
+            .map_or(&[], Vec::as_slice)
     }
+}
 
-    fn distance(&self, cell: Cell) -> Option<u16> {
-        let distance = *self.distances.get(cell_index(cell)?)?;
-        (distance != UNREACHABLE_FLOW_DISTANCE).then_some(distance)
-    }
-
-    fn next_step(&self, start: Cell) -> Option<Cell> {
-        let current_distance = self.distance(start)?;
-        if current_distance == 0 {
-            return Some(start);
-        }
-
-        let mut best = None;
-        for neighbor in neighbors(start) {
-            let Some(distance) = self.distance(neighbor) else {
-                continue;
-            };
-            if distance >= current_distance {
-                continue;
-            }
-            match best {
-                None => best = Some((distance, neighbor)),
-                Some((best_distance, _)) if distance < best_distance => {
-                    best = Some((distance, neighbor));
-                }
-                _ => {}
-            }
-        }
-        best.map(|(_, cell)| cell)
-    }
+fn grid_axis_cell(milli: i64, last: i16) -> i16 {
+    let cell = milli.div_euclid(i64::from(CELL_SCALE));
+    i16::try_from(cell.clamp(0, i64::from(last))).unwrap_or(last)
 }
 
 impl GameState {
@@ -96,6 +32,7 @@ impl GameState {
         tower_ids.sort_unstable();
 
         let mut shots = 0_u16;
+        let mut raider_index = None;
         for tower in tower_ids {
             let Some(mut attack) = self.attacks.get(entity_key(tower)).copied() else {
                 continue;
@@ -106,7 +43,8 @@ impl GameState {
                 continue;
             }
 
-            let Some(target) = self.target_for_tower(tower, attack.range_milli) else {
+            let index = raider_index.get_or_insert_with(|| self.raider_cell_index());
+            let Some(target) = self.target_for_tower_in(tower, attack.range_milli, index) else {
                 continue;
             };
             let tower_component = self
@@ -216,34 +154,78 @@ impl GameState {
         (impacts, killed)
     }
 
+    pub(super) fn raider_cell_index(&self) -> RaiderCellIndex {
+        let cell_count = usize::try_from(GRID_WIDTH).unwrap_or_default()
+            * usize::try_from(GRID_HEIGHT).unwrap_or_default();
+        let mut cells = vec![Vec::new(); cell_count];
+        for key in self.raiders.keys() {
+            let Some(transform) = self.transforms.get(key) else {
+                continue;
+            };
+            if let Some(index) = cell_index(cell_for_transform(*transform)) {
+                cells[index].push(key_entity(key));
+            }
+        }
+        RaiderCellIndex { cells }
+    }
+
+    #[cfg(test)]
     pub(super) fn target_for_tower(&self, tower: EntityId, range_milli: i32) -> Option<EntityId> {
+        self.target_for_tower_in(tower, range_milli, &self.raider_cell_index())
+    }
+
+    /// Nearest live raider within range (ties by entity id), examining only the
+    /// raiders whose cell overlaps the tower's range square.
+    pub(super) fn target_for_tower_in(
+        &self,
+        tower: EntityId,
+        range_milli: i32,
+        index: &RaiderCellIndex,
+    ) -> Option<EntityId> {
         let tower_position = *self.transforms.get(entity_key(tower))?;
-        let range_sq = i64::from(range_milli) * i64::from(range_milli);
-        self.raiders
-            .keys()
-            .map(key_entity)
-            .filter_map(|entity| {
-                if !self
-                    .health
-                    .get(entity_key(entity))
-                    .is_some_and(|health| health.current > 0)
-                {
-                    return None;
+        let range = i64::from(range_milli);
+        let range_sq = range * range;
+        let tower_x = i64::from(tower_position.x_milli);
+        let tower_z = i64::from(tower_position.z_milli);
+        let min_x = grid_axis_cell(tower_x - range, GRID_WIDTH - 1);
+        let max_x = grid_axis_cell(tower_x + range, GRID_WIDTH - 1);
+        let min_z = grid_axis_cell(tower_z - range, GRID_HEIGHT - 1);
+        let max_z = grid_axis_cell(tower_z + range, GRID_HEIGHT - 1);
+
+        let mut best: Option<(i64, EntityId)> = None;
+        let mut evaluated = 0_u64;
+        for z in min_z..=max_z {
+            for x in min_x..=max_x {
+                for &entity in index.cell(x, z) {
+                    evaluated += 1;
+                    if !self
+                        .health
+                        .get(entity_key(entity))
+                        .is_some_and(|health| health.current > 0)
+                    {
+                        continue;
+                    }
+                    let Some(position) = self.transforms.get(entity_key(entity)) else {
+                        continue;
+                    };
+                    let dx = i64::from(position.x_milli) - tower_x;
+                    let dz = i64::from(position.z_milli) - tower_z;
+                    let distance_sq = dx * dx + dz * dz;
+                    if distance_sq <= range_sq
+                        && best.is_none_or(|current| (distance_sq, entity) < current)
+                    {
+                        best = Some((distance_sq, entity));
+                    }
                 }
-                let position = self.transforms.get(entity_key(entity))?;
-                let dx = i64::from(position.x_milli - tower_position.x_milli);
-                let dz = i64::from(position.z_milli - tower_position.z_milli);
-                let distance_sq = dx * dx + dz * dz;
-                (distance_sq <= range_sq).then_some((distance_sq, entity))
-            })
-            .min()
-            .map(|(_, entity)| entity)
+            }
+        }
+        self.count_work(|work| work.target_candidate_evaluations += evaluated);
+        best.map(|(_, entity)| entity)
     }
 
     pub(super) fn run_raider_movement_system(&mut self) -> (u16, u16) {
         let mut raiders = self.raiders.keys().map(key_entity).collect::<Vec<_>>();
         raiders.sort_unstable();
-        let flow_fields = self.raider_flow_fields(&raiders);
         let mut wood_stolen = 0_u16;
         let mut town_damage = 0_u16;
         let mut finished = Vec::new();
@@ -281,20 +263,15 @@ impl GameState {
                         finished.push(entity);
                         continue;
                     }
-                    raider.target_storage =
-                        self.nearest_raider_storage_from_flow_fields(movement.from, &flow_fields);
+                    raider.target_storage = self.nearest_raider_storage_from_fields(movement.from);
                     self.raiders.insert(entity_key(entity), raider);
                 }
 
-                let mut next = flow_fields
-                    .get(&raider.target_storage)
-                    .and_then(|field| field.next_step(movement.from));
+                let mut next = self.raider_next_step(raider.target_storage, movement.from);
                 if next.is_none() && raider.target_storage != TOWN_ENTITY {
                     raider.target_storage = TOWN_ENTITY;
                     self.raiders.insert(entity_key(entity), raider);
-                    next = flow_fields
-                        .get(&TOWN_ENTITY)
-                        .and_then(|field| field.next_step(movement.from));
+                    next = self.raider_next_step(TOWN_ENTITY, movement.from);
                 }
                 let Some(next) = next else {
                     movement.to = movement.from;
@@ -323,53 +300,16 @@ impl GameState {
         (wood_stolen, town_damage)
     }
 
-    fn raider_flow_fields(
-        &self,
-        active_raiders: &[EntityId],
-    ) -> BTreeMap<EntityId, RaiderFlowField> {
-        let needs_route = active_raiders.iter().any(|entity| {
-            self.movements
-                .get(entity_key(*entity))
-                .is_some_and(|movement| {
-                    movement.progress_milli.saturating_add(movement.speed_milli)
-                        >= CELL_SCALE as u16
-                })
-        });
-        if !needs_route {
-            return BTreeMap::new();
-        }
-
-        let mut targets = active_raiders
-            .iter()
-            .filter_map(|entity| {
-                self.raiders
-                    .get(entity_key(*entity))
-                    .map(|raider| raider.target_storage)
-            })
-            .collect::<Vec<_>>();
-        targets.extend(self.settlement_storage_ids().into_iter().filter(|entity| {
-            self.storage
-                .get(entity_key(*entity))
-                .is_some_and(|storage| storage.wood > 0)
-        }));
-        targets.push(TOWN_ENTITY);
-        targets.sort_unstable();
-        targets.dedup();
-
-        targets
-            .into_iter()
-            .filter_map(|entity| {
-                let goals = self.storage_goal_cells(entity, None);
-                RaiderFlowField::build(self, &goals).map(|field| (entity, field))
-            })
-            .collect()
+    /// Next step toward a storage target along its retained distance field.
+    fn raider_next_step(&self, target_storage: EntityId, from: Cell) -> Option<Cell> {
+        self.count_work(|work| work.path_follow_steps += 1);
+        let goals = self.storage_goal_cells(target_storage, None);
+        self.with_distance_field(&goals, None, |field| field?.next_step(from))
     }
 
-    fn nearest_raider_storage_from_flow_fields(
-        &self,
-        start: Cell,
-        flow_fields: &BTreeMap<EntityId, RaiderFlowField>,
-    ) -> EntityId {
+    /// Nearest stocked settlement storage by retained distance field, falling
+    /// back to the Town Hall.
+    fn nearest_raider_storage_from_fields(&self, start: Cell) -> EntityId {
         let mut candidates = self
             .settlement_storage_ids()
             .into_iter()
@@ -378,7 +318,9 @@ impl GameState {
                 if storage.wood == 0 {
                     return None;
                 }
-                let distance = flow_fields.get(&entity)?.distance(start)?;
+                let goals = self.storage_goal_cells(entity, None);
+                let distance =
+                    self.with_distance_field(&goals, None, |field| field?.distance(start))?;
                 Some((distance, entity))
             })
             .collect::<Vec<_>>();
@@ -546,11 +488,21 @@ impl GameState {
 mod tests {
     use super::*;
 
+    fn raiders_crossing_cells(state: &mut GameState) {
+        let raiders = state.raiders.keys().collect::<Vec<_>>();
+        for key in raiders {
+            let movement = state
+                .movements
+                .get_mut(key)
+                .expect("spawned raider must move");
+            movement.progress_milli = (CELL_SCALE as u16).saturating_sub(movement.speed_milli);
+        }
+    }
+
     #[test]
-    fn raider_flow_field_matches_existing_bfs_routes() {
+    fn raider_distance_field_matches_existing_bfs_routes() {
         let state = GameState::new(0x5eed);
         let goals = town_goal_cells();
-        let flow = RaiderFlowField::build(&state, &goals).expect("town must have a flow field");
 
         for z in 0..GRID_HEIGHT {
             for x in 0..GRID_WIDTH {
@@ -559,58 +511,56 @@ mod tests {
                     continue;
                 }
                 assert_eq!(
-                    flow.next_step(cell),
+                    state.raider_next_step(TOWN_ENTITY, cell),
                     state.next_path_step_to_any(cell, &goals, None),
-                    "flow field must preserve deterministic BFS routing from {cell:?}"
+                    "distance field must preserve deterministic BFS routing from {cell:?}"
                 );
             }
         }
     }
 
     #[test]
-    fn raiders_between_cells_require_no_flow_fields() {
+    fn raiders_between_cells_do_no_navigation_work() {
         let mut state = GameState::new(17);
         state.wave = 1;
         state.spawn_raider(Edge::North);
-        let raiders = state.raiders.keys().map(key_entity).collect::<Vec<_>>();
+        let before = state.work_counters();
+        state.run_raider_movement_system();
+        let after = state.work_counters();
 
-        assert!(state.raider_flow_fields(&raiders).is_empty());
+        assert_eq!(after.flow_field_rebuilds, before.flow_field_rebuilds);
+        assert_eq!(after.path_follow_steps, before.path_follow_steps);
     }
 
     #[test]
-    fn raiders_crossing_cells_get_all_retarget_candidates() {
+    fn raiders_crossing_cells_reuse_retained_fields_across_ticks() {
         let mut state = GameState::new(17);
         state.wave = 1;
         state.spawn_raider(Edge::North);
-        let raiders = state.raiders.keys().map(key_entity).collect::<Vec<_>>();
-        let raider = raiders[0];
-        let movement = state
-            .movements
-            .get_mut(entity_key(raider))
-            .expect("spawned raider must move");
-        movement.progress_milli = (CELL_SCALE as u16).saturating_sub(movement.speed_milli);
-        let fields = state.raider_flow_fields(&raiders);
+        state.spawn_raider(Edge::South);
+        raiders_crossing_cells(&mut state);
+        state.run_raider_movement_system();
+        let warmed = state.work_counters();
 
-        assert!(fields.contains_key(&TOWN_ENTITY));
-        for target in state.settlement_storage_ids().into_iter().filter(|entity| {
-            state
-                .storage
-                .get(entity_key(*entity))
-                .is_some_and(|storage| storage.wood > 0)
-        }) {
-            assert!(fields.contains_key(&target));
-        }
+        raiders_crossing_cells(&mut state);
+        state.run_raider_movement_system();
+        let after = state.work_counters();
+        assert_eq!(after.flow_field_rebuilds, warmed.flow_field_rebuilds);
+        assert_eq!(
+            after.navigation_cells_visited,
+            warmed.navigation_cells_visited
+        );
+        assert_eq!(after.path_follow_steps - warmed.path_follow_steps, 2);
     }
 
     #[test]
-    fn flow_field_retargeting_matches_existing_bfs_storage_choice() {
+    fn field_retargeting_matches_existing_bfs_storage_choice() {
         let mut state = GameState::new(17);
         let storage_cell = (1..GRID_HEIGHT - 1)
             .flat_map(|z| (1..GRID_WIDTH - 1).map(move |x| Cell::new(x, z)))
             .find(|cell| {
-                let mut probe = state.clone();
-                probe
-                    .apply(Command::PlaceStorageHouse {
+                state
+                    .validate_command(Command::PlaceStorageHouse {
                         x: cell.x,
                         z: cell.z,
                     })
@@ -632,17 +582,6 @@ mod tests {
         assert_eq!(transferred, 20);
         assert_eq!(state.store_wood_at(storage_house, transferred), transferred);
 
-        state.wave = 1;
-        state.spawn_raider(Edge::North);
-        let raiders = state.raiders.keys().map(key_entity).collect::<Vec<_>>();
-        let raider = raiders[0];
-        let movement = state
-            .movements
-            .get_mut(entity_key(raider))
-            .expect("spawned raider must move");
-        movement.progress_milli = (CELL_SCALE as u16).saturating_sub(movement.speed_milli);
-        let fields = state.raider_flow_fields(&raiders);
-
         for z in 0..GRID_HEIGHT {
             for x in 0..GRID_WIDTH {
                 let cell = Cell::new(x, z);
@@ -650,10 +589,63 @@ mod tests {
                     continue;
                 }
                 assert_eq!(
-                    state.nearest_raider_storage_from_flow_fields(cell, &fields),
+                    state.nearest_raider_storage_from_fields(cell),
                     state.nearest_raider_storage(cell),
-                    "flow-field retargeting must preserve BFS storage choice from {cell:?}"
+                    "field retargeting must preserve BFS storage choice from {cell:?}"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn spatial_targeting_matches_a_full_raider_scan() {
+        let mut state = GameState::new(23);
+        state.wave = 1;
+        for edge in Edge::ALL {
+            for _ in 0..3 {
+                state.spawn_raider(edge);
+            }
+        }
+        // Spread raiders over many fixed-point positions.
+        let raiders = state.raiders.keys().collect::<Vec<_>>();
+        for (step, key) in raiders.into_iter().enumerate() {
+            let offset = i32::try_from(step).unwrap() * 1_317;
+            state.transforms.insert(
+                key,
+                Transform {
+                    x_milli: (offset * 7) % (i32::from(GRID_WIDTH) * CELL_SCALE),
+                    z_milli: (offset * 3) % (i32::from(GRID_HEIGHT) * CELL_SCALE),
+                },
+            );
+        }
+        let index = state.raider_cell_index();
+        let tower = state.allocate_entity();
+        for z in 0..GRID_HEIGHT {
+            for x in 0..GRID_WIDTH {
+                state
+                    .transforms
+                    .insert(entity_key(tower), Transform::at_cell(Cell::new(x, z)));
+                for range in [0, 999, 1_000, 2_000, 2_500, 30_000] {
+                    let tower_position = state.transforms.get(entity_key(tower)).copied().unwrap();
+                    let expected = state
+                        .raiders
+                        .keys()
+                        .filter_map(|key| {
+                            let position = state.transforms.get(key)?;
+                            let dx = i64::from(position.x_milli - tower_position.x_milli);
+                            let dz = i64::from(position.z_milli - tower_position.z_milli);
+                            let distance_sq = dx * dx + dz * dz;
+                            (distance_sq <= i64::from(range) * i64::from(range))
+                                .then_some((distance_sq, key_entity(key)))
+                        })
+                        .min()
+                        .map(|(_, entity)| entity);
+                    assert_eq!(
+                        state.target_for_tower_in(tower, range, &index),
+                        expected,
+                        "tower at {x},{z} range {range}"
+                    );
+                }
             }
         }
     }
