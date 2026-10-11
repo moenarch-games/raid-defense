@@ -2,6 +2,7 @@ use std::{env, fmt, process};
 
 use raid_defense_core::{
     Cell, Command, EntityKind, Event, GRID_HEIGHT, GRID_WIDTH, GameState, TowerArchetype,
+    WorkCounters,
 };
 
 const DEFAULT_SEED: u64 = 1;
@@ -29,7 +30,7 @@ impl Policy {
         }
     }
 
-    fn choose_action(self, state: &GameState) -> Option<Command> {
+    fn choose_action(self, state: &GameState, work: &mut PolicyWork) -> Option<Command> {
         if self == Self::Passive
             || state.is_night()
             || state.town_health() == 0
@@ -48,9 +49,9 @@ impl Policy {
 
         match self {
             Self::Passive => None,
-            Self::Economy => choose_economy_action(state, targets),
-            Self::Balanced => choose_balanced_action(state, targets),
-            Self::Defense => choose_defense_action(state, targets),
+            Self::Economy => choose_economy_action(state, targets, work),
+            Self::Balanced => choose_balanced_action(state, targets, work),
+            Self::Defense => choose_defense_action(state, targets, work),
         }
     }
 }
@@ -65,6 +66,17 @@ impl fmt::Display for Policy {
         };
         formatter.write_str(name)
     }
+}
+
+/// Deterministic work performed by the policy layer while choosing commands.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+struct PolicyWork {
+    /// Candidate commands checked through `GameState::validate_command`.
+    validation_probes: u64,
+    /// Full game-state clones made while probing candidates. Probing validates
+    /// against the authoritative state in place, so this stays zero unless an
+    /// explicit, reviewed O(N) clone contract is introduced.
+    world_clones: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -248,6 +260,8 @@ struct SimulationResult {
     commands_applied: u64,
     metrics: TickMetrics,
     checksum: u64,
+    work: WorkCounters,
+    policy_work: PolicyWork,
 }
 
 impl SimulationResult {
@@ -298,9 +312,10 @@ fn simulate(seed: u64, tick_limit: u64, policy: Policy) -> SimulationResult {
     let mut state = GameState::new(seed);
     let mut metrics = TickMetrics::default();
     let mut commands_applied = 0_u64;
+    let mut policy_work = PolicyWork::default();
 
     while state.tick() < tick_limit && state.town_health() != 0 {
-        if let Some(command) = policy.choose_action(&state) {
+        if let Some(command) = policy.choose_action(&state, &mut policy_work) {
             state
                 .apply(command)
                 .expect("a command accepted by the deterministic policy probe must remain valid");
@@ -333,105 +348,119 @@ fn simulate(seed: u64, tick_limit: u64, policy: Policy) -> SimulationResult {
         commands_applied,
         metrics,
         checksum: state.checksum(),
+        work: state.work_counters(),
+        policy_work,
     }
 }
 
-fn choose_economy_action(state: &GameState, targets: PlanTargets) -> Option<Command> {
+fn choose_economy_action(
+    state: &GameState,
+    targets: PlanTargets,
+    work: &mut PolicyWork,
+) -> Option<Command> {
     if state.sawmill_count() < targets.sawmills
-        && let Some(command) = try_place_sawmill(state)
+        && let Some(command) = try_place_sawmill(state, work)
     {
         return Some(command);
     }
     if state.storage_house_count() < targets.storage_houses
-        && let Some(command) = try_place_storage_house(state)
+        && let Some(command) = try_place_storage_house(state, work)
     {
         return Some(command);
     }
     if state.house_count() < targets.houses
-        && let Some(command) = try_place_house(state)
+        && let Some(command) = try_place_house(state, work)
     {
         return Some(command);
     }
     if state.tower_count() < targets.towers
-        && let Some(command) = try_place_tower(state)
+        && let Some(command) = try_place_tower(state, work)
     {
         return Some(command);
     }
-    try_upgrade_tower(state)
+    try_upgrade_tower(state, work)
 }
 
-fn choose_balanced_action(state: &GameState, targets: PlanTargets) -> Option<Command> {
+fn choose_balanced_action(
+    state: &GameState,
+    targets: PlanTargets,
+    work: &mut PolicyWork,
+) -> Option<Command> {
     if state.sawmill_count() == 0
-        && let Some(command) = try_place_sawmill(state)
+        && let Some(command) = try_place_sawmill(state, work)
     {
         return Some(command);
     }
     if state.storage_house_count() == 0
-        && let Some(command) = try_place_storage_house(state)
+        && let Some(command) = try_place_storage_house(state, work)
     {
         return Some(command);
     }
     if state.tower_count() < targets.towers
-        && let Some(command) = try_place_tower(state)
+        && let Some(command) = try_place_tower(state, work)
     {
         return Some(command);
     }
     if state.house_count() < targets.houses
-        && let Some(command) = try_place_house(state)
+        && let Some(command) = try_place_house(state, work)
     {
         return Some(command);
     }
     if state.sawmill_count() < targets.sawmills
-        && let Some(command) = try_place_sawmill(state)
+        && let Some(command) = try_place_sawmill(state, work)
     {
         return Some(command);
     }
     if state.storage_house_count() < targets.storage_houses
-        && let Some(command) = try_place_storage_house(state)
+        && let Some(command) = try_place_storage_house(state, work)
     {
         return Some(command);
     }
-    try_upgrade_tower(state)
+    try_upgrade_tower(state, work)
 }
 
-fn choose_defense_action(state: &GameState, targets: PlanTargets) -> Option<Command> {
+fn choose_defense_action(
+    state: &GameState,
+    targets: PlanTargets,
+    work: &mut PolicyWork,
+) -> Option<Command> {
     if state.sawmill_count() == 0
-        && let Some(command) = try_place_sawmill(state)
+        && let Some(command) = try_place_sawmill(state, work)
     {
         return Some(command);
     }
     if state.storage_house_count() == 0
-        && let Some(command) = try_place_storage_house(state)
+        && let Some(command) = try_place_storage_house(state, work)
     {
         return Some(command);
     }
     if state.tower_count() < targets.towers
-        && let Some(command) = try_place_tower(state)
+        && let Some(command) = try_place_tower(state, work)
     {
         return Some(command);
     }
-    if let Some(command) = try_upgrade_tower(state) {
+    if let Some(command) = try_upgrade_tower(state, work) {
         return Some(command);
     }
     if state.house_count() < targets.houses
-        && let Some(command) = try_place_house(state)
+        && let Some(command) = try_place_house(state, work)
     {
         return Some(command);
     }
     if state.sawmill_count() < targets.sawmills
-        && let Some(command) = try_place_sawmill(state)
+        && let Some(command) = try_place_sawmill(state, work)
     {
         return Some(command);
     }
     if state.storage_house_count() < targets.storage_houses
-        && let Some(command) = try_place_storage_house(state)
+        && let Some(command) = try_place_storage_house(state, work)
     {
         return Some(command);
     }
     None
 }
 
-fn try_place_sawmill(state: &GameState) -> Option<Command> {
+fn try_place_sawmill(state: &GameState, work: &mut PolicyWork) -> Option<Command> {
     let snapshot = state.snapshot();
     let forests = snapshot
         .entities
@@ -448,13 +477,18 @@ fn try_place_sawmill(state: &GameState) -> Option<Command> {
             cell.x,
         )
     });
-    first_valid_placement(state, cells, |cell| Command::PlaceSawmill {
-        x: cell.x,
-        z: cell.z,
-    })
+    first_valid_placement(
+        state,
+        cells,
+        |cell| Command::PlaceSawmill {
+            x: cell.x,
+            z: cell.z,
+        },
+        work,
+    )
 }
 
-fn try_place_storage_house(state: &GameState) -> Option<Command> {
+fn try_place_storage_house(state: &GameState, work: &mut PolicyWork) -> Option<Command> {
     let snapshot = state.snapshot();
     let sawmills = snapshot
         .entities
@@ -471,22 +505,32 @@ fn try_place_storage_house(state: &GameState) -> Option<Command> {
             cell.x,
         )
     });
-    first_valid_placement(state, cells, |cell| Command::PlaceStorageHouse {
-        x: cell.x,
-        z: cell.z,
-    })
+    first_valid_placement(
+        state,
+        cells,
+        |cell| Command::PlaceStorageHouse {
+            x: cell.x,
+            z: cell.z,
+        },
+        work,
+    )
 }
 
-fn try_place_house(state: &GameState) -> Option<Command> {
+fn try_place_house(state: &GameState, work: &mut PolicyWork) -> Option<Command> {
     let mut cells = all_cells();
     cells.sort_by_key(|cell| (distance_to_center(*cell), cell.z, cell.x));
-    first_valid_placement(state, cells, |cell| Command::PlaceHouse {
-        x: cell.x,
-        z: cell.z,
-    })
+    first_valid_placement(
+        state,
+        cells,
+        |cell| Command::PlaceHouse {
+            x: cell.x,
+            z: cell.z,
+        },
+        work,
+    )
 }
 
-fn try_place_tower(state: &GameState) -> Option<Command> {
+fn try_place_tower(state: &GameState, work: &mut PolicyWork) -> Option<Command> {
     let slot = state.tower_count() + state.construction_site_count();
     let archetype = if slot % 3 == 2 {
         TowerArchetype::Cannon
@@ -498,14 +542,19 @@ fn try_place_tower(state: &GameState) -> Option<Command> {
         let center_distance = distance_to_center(*cell);
         (center_distance.abs_diff(2), center_distance, cell.z, cell.x)
     });
-    first_valid_placement(state, cells, |cell| Command::PlaceTower {
-        x: cell.x,
-        z: cell.z,
-        archetype,
-    })
+    first_valid_placement(
+        state,
+        cells,
+        |cell| Command::PlaceTower {
+            x: cell.x,
+            z: cell.z,
+            archetype,
+        },
+        work,
+    )
 }
 
-fn try_upgrade_tower(state: &GameState) -> Option<Command> {
+fn try_upgrade_tower(state: &GameState, work: &mut PolicyWork) -> Option<Command> {
     let mut towers = state
         .snapshot()
         .entities
@@ -523,26 +572,33 @@ fn try_upgrade_tower(state: &GameState) -> Option<Command> {
             x: tower.cell.x,
             z: tower.cell.z,
         };
-        if command_is_valid(state, command) {
+        if command_is_valid(state, command, work) {
             return Some(command);
         }
     }
     None
 }
 
-fn first_valid_placement<F>(state: &GameState, cells: Vec<Cell>, command_for: F) -> Option<Command>
+fn first_valid_placement<F>(
+    state: &GameState,
+    cells: Vec<Cell>,
+    command_for: F,
+    work: &mut PolicyWork,
+) -> Option<Command>
 where
     F: Fn(Cell) -> Command,
 {
     cells.into_iter().find_map(|cell| {
         let command = command_for(cell);
-        command_is_valid(state, command).then_some(command)
+        command_is_valid(state, command, work).then_some(command)
     })
 }
 
-fn command_is_valid(state: &GameState, command: Command) -> bool {
-    let mut probe = state.clone();
-    probe.apply(command).is_ok()
+/// Probe a candidate command against the authoritative state without cloning
+/// it: `validate_command` gives the same result as `apply` and mutates nothing.
+fn command_is_valid(state: &GameState, command: Command, work: &mut PolicyWork) -> bool {
+    work.validation_probes += 1;
+    state.validate_command(command).is_ok()
 }
 
 fn all_cells() -> Vec<Cell> {
@@ -616,6 +672,21 @@ fn print_report(config: &Config, results: &[SimulationResult]) {
             result.metrics.wood_stolen,
             result.metrics.town_damage,
             result.checksum,
+        );
+    }
+
+    for result in results {
+        let work = result.work;
+        println!(
+            "work seed={} flow_field_rebuilds={} navigation_cells_visited={} path_follow_steps={} target_candidate_evaluations={} logistics_candidate_searches={} policy_validation_probes={} world_clones={}",
+            result.seed,
+            work.flow_field_rebuilds,
+            work.navigation_cells_visited,
+            work.path_follow_steps,
+            work.target_candidate_evaluations,
+            work.logistics_candidate_searches,
+            result.policy_work.validation_probes,
+            result.policy_work.world_clones,
         );
     }
 

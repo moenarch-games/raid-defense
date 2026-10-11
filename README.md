@@ -79,7 +79,25 @@ Built-in policies are deliberately small decision layers:
 - `balanced` maintains an economy baseline while scaling towers with completed waves;
 - `defense` prioritizes towers and upgrades after establishing minimal logistics.
 
-Policies do not bypass game rules. Candidate actions are probed against a cloned authoritative state and only normal `Command` values are submitted to the real simulation. Reports include survival, waves, health, wood, entity counts, combat/economy throughput, theft/damage, and the final deterministic checksum.
+Policies do not bypass game rules. Candidate actions are probed with `GameState::validate_command`, which returns exactly what `apply` would return without mutating or cloning the authoritative state, and only normal `Command` values are submitted to the real simulation. Reports include survival, waves, health, wood, entity counts, combat/economy throughput, theft/damage, the final deterministic checksum, and one `work seed=<seed> …` line per run.
+
+### Deterministic work counters
+
+The core exposes `GameState::work_counters()`, a `WorkCounters` value accumulated since the state was created. Counters are deterministic for the same seed, rules and commands, but they are instrumentation only: they never enter the checksum, snapshots, equality or gameplay. The simulator's `work` line reports them together with two policy counters:
+
+| Counter | Meaning | Allowed scaling |
+| --- | --- | --- |
+| `flow_field_rebuilds` | Grid-wide navigation builds (one multi-source distance field per goal-cell set and topology). | Zero across ticks with unchanged topology; after a topology/goal change at most one build per goal set, independent of agent count. |
+| `navigation_cells_visited` | Cells expanded by those builds. | At most one grid sweep per rebuild. |
+| `path_follow_steps` | Per-agent next-step lookups against retained fields. | Linear in active agents. |
+| `target_candidate_evaluations` | Raiders examined by tower targeting. | Follows the raiders in the cells covered by each tower's range square, not total raiders. |
+| `logistics_candidate_searches` | Worker/forest/sawmill/storage/site candidates examined by logistics selection. | Reported separately from movement; the population scaling bound is a follow-up of #38. |
+| `policy_validation_probes` | Candidate commands the simulator policy validated. | Policy-dependent. |
+| `world_clones` | Full game-state clones made while probing candidates. | Must stay `0` unless an explicit, reviewed O(N) clone contract is declared. |
+
+Navigation is retained per goal-cell set inside each `GameState` and discarded whenever a building is inserted. Placement validation builds fields for the hypothetical blocked topology once per goal set, so its cost does not grow with the number of raiders or workers. Every retained answer is identical to the from-scratch breadth-first search (same neighbor order and tie-breaking), which is pinned by oracle unit tests and baseline checksums.
+
+The counters are declared in `.performance/contract.json` as non-blocking operation-count metrics. Their scaling shapes are enforced by `crates/raid-defense-core/tests/scaling_contracts.rs`, and their reporting and byte-identical determinism by `crates/raid-defense-sim/tests/work_counters_report.rs` and `scripts/performance-smoke.sh`.
 
 ## ECS direction
 

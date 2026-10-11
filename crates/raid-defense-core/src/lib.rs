@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, VecDeque};
 use collection_kernels::{SparseMap, SparseSet};
 
 mod default_rules;
+mod navigation;
 pub mod rules;
 mod state_basic;
 mod state_combat;
@@ -14,6 +15,7 @@ mod state_snapshot_path;
 mod world;
 
 pub use default_rules::STANDARD_RULES;
+pub use navigation::WorkCounters;
 pub use rules::*;
 
 pub type EntityId = u32;
@@ -432,6 +434,8 @@ pub struct GameState {
     work_ticks: SparseMap<u16>,
     forest_regrowth_ready_tick: BTreeMap<EntityId, u64>,
     alive: SparseSet,
+    /// Retained navigation and work counters; never authoritative.
+    instrumentation: navigation::Instrumentation,
 }
 
 include!("helpers.rs");

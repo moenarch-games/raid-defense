@@ -38,6 +38,7 @@ impl GameState {
             work_ticks: SparseMap::new(),
             forest_regrowth_ready_tick: BTreeMap::new(),
             alive: SparseSet::new(),
+            instrumentation: navigation::Instrumentation::default(),
         };
 
         let town_cell = town_center();
@@ -59,6 +60,7 @@ impl GameState {
                 cell: town_cell,
             },
         );
+        state.invalidate_navigation();
         state.storage.insert(
             entity_key(TOWN_ENTITY),
             ResourceStorage {

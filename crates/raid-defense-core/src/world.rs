@@ -104,6 +104,7 @@ impl GameState {
                 cell,
             },
         );
+        self.invalidate_navigation();
         self.storage.insert(
             entity_key(entity),
             ResourceStorage {
@@ -249,6 +250,7 @@ impl GameState {
             .settlement_storage_ids()
             .into_iter()
             .filter_map(|entity| {
+                self.count_work(|work| work.logistics_candidate_searches += 1);
                 let storage = self.storage.get(entity_key(entity))?;
                 if storage.wood >= storage.wood_capacity {
                     return None;
@@ -273,6 +275,7 @@ impl GameState {
             .settlement_storage_ids()
             .into_iter()
             .filter_map(|entity| {
+                self.count_work(|work| work.logistics_candidate_searches += 1);
                 let storage = self.storage.get(entity_key(entity))?;
                 if storage.wood == 0 {
                     return None;
@@ -386,43 +389,6 @@ impl GameState {
             .iter()
             .filter_map(|start| self.path_distance_to_any(*start, goals, None))
             .min()
-    }
-
-    pub(super) fn path_distance_to_any(
-        &self,
-        start: Cell,
-        goals: &[Cell],
-        extra_block: Option<Cell>,
-    ) -> Option<u16> {
-        if goals.contains(&start) {
-            return Some(0);
-        }
-        if !in_bounds(start) || goals.is_empty() {
-            return None;
-        }
-
-        let cell_count = usize::try_from(GRID_WIDTH).ok()? * usize::try_from(GRID_HEIGHT).ok()?;
-        let mut visited = vec![false; cell_count];
-        let mut queue = VecDeque::new();
-        let start_index = cell_index(start)?;
-        visited[start_index] = true;
-        queue.push_back((start, 0_u16));
-
-        while let Some((cell, distance)) = queue.pop_front() {
-            for neighbor in neighbors(cell) {
-                let index = cell_index(neighbor)?;
-                if visited[index] || self.path_cell_blocked(neighbor, extra_block) {
-                    continue;
-                }
-                let next_distance = distance.saturating_add(1);
-                if goals.contains(&neighbor) {
-                    return Some(next_distance);
-                }
-                visited[index] = true;
-                queue.push_back((neighbor, next_distance));
-            }
-        }
-        None
     }
 }
 
