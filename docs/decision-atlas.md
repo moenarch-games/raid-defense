@@ -61,3 +61,27 @@ Once towers, buildings, or other strategic options have been unlocked through pr
 - **A — All unlocked options available:** every unlocked option is available during every compatible scenario.
 - **B — Pre-scenario loadout:** before starting, the player chooses a bounded subset of unlocked towers/buildings/options to bring into that scenario.
 - **C — Scenario-defined roster:** each scenario defines which unlocked options may be used, with little or no player loadout choice.
+
+
+### Decision 1.6 — Scenario-defined strategic roster
+
+**Answers 1.5.**
+
+Choose **C**.
+
+Each scenario defines the towers, buildings, and other strategic options that may be used there. Meta-progression may unlock options globally, but an unlock does not imply universal availability in every scenario.
+
+Consequences:
+
+- scenario designers can shape distinct strategic problems instead of balancing every scenario against the full unlocked catalog;
+- scenario acceptance can name the intended roster explicitly;
+- progression unlocks expand the set of possibilities available to future scenario definitions rather than creating a universal player loadout;
+- scenario rules remain authoritative inputs and must determine availability rather than browser-only hiding.
+
+### Question 1.7 — How should scenario maps be authored?
+
+What should define the battlefield, resource layout, gates, and other major scenario structure?
+
+- **A — Authored scenarios:** each scenario has a deliberately designed map and fixed major layout. Randomness may affect cosmetic details only.
+- **B — Procedural scenarios:** scenario identity is mostly rules plus a seed; battlefield layout, resources, and routes are generated.
+- **C — Authored structure with deterministic procedural variation:** each scenario defines its major map shape, gates, objectives, roster, and important landmarks, while a seed can vary bounded details such as forest placement, minor terrain dressing, or optional resource distribution without changing the scenario's core identity.
