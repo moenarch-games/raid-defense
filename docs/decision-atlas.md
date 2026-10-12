@@ -37,3 +37,27 @@ How much gameplay state should persist when moving from one completed scenario t
 - **A — Independent scenarios:** every scenario starts from a fresh settlement and standard starting capabilities. Completion may unlock access to more scenarios, but no gameplay power carries over.
 - **B — Persistent campaign settlement:** resources, buildings, population, upgrades, or other substantial gameplay state carry from scenario to scenario.
 - **C — Fresh settlements with horizontal meta-progression:** each scenario starts a fresh economy and settlement, while completing scenarios can unlock new maps, tower/building choices, or other strategic options without carrying the previous settlement itself forward.
+
+
+### Decision 1.4 — Fresh settlements with horizontal meta-progression
+
+**Answers 1.3.**
+
+Choose **C**.
+
+Each scenario starts with a fresh settlement, economy, buildings, resources, and population. Completing scenarios may unlock additional maps and strategic options for future runs, but the previous settlement itself does not carry forward.
+
+Consequences:
+
+- scenario balance remains self-contained and reproducible from its starting state;
+- campaign progression expands the player's option space rather than accumulating settlement resources or infrastructure;
+- persistent progression must not silently inject previous-run economy, buildings, population, or combat state into a new scenario;
+- replay/checksum identity for a scenario can remain grounded in that scenario's seed, rules, unlock/loadout inputs, commands, and simulation steps.
+
+### Question 1.5 — How should unlocked strategic options enter a scenario?
+
+Once towers, buildings, or other strategic options have been unlocked through progression, how should they be available in a fresh scenario?
+
+- **A — All unlocked options available:** every unlocked option is available during every compatible scenario.
+- **B — Pre-scenario loadout:** before starting, the player chooses a bounded subset of unlocked towers/buildings/options to bring into that scenario.
+- **C — Scenario-defined roster:** each scenario defines which unlocked options may be used, with little or no player loadout choice.
