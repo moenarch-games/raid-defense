@@ -135,3 +135,28 @@ If raiders get through defenses but do not destroy the Town Hall, what should th
 - **A — Mostly binary survival:** losses before Town Hall destruction are limited; surviving the wave largely resets the immediate danger, so failure pressure is concentrated on the final Town Hall loss.
 - **B — Persistent attrition:** raids can permanently destroy buildings, kill population, steal resources, and leave the settlement substantially weakened across later waves.
 - **C — Recoverable attrition:** raids can steal resources, damage buildings, and cause meaningful setbacks that persist into later waves, but core progression should generally remain recoverable rather than allowing one imperfect wave to create an unrecoverable death spiral.
+
+
+### Decision 1.12 — Recoverable attrition
+
+**Answers 1.11.**
+
+Choose **C**.
+
+Raids may cause meaningful persistent setbacks—such as stolen resources, damaged buildings, interrupted logistics, or population pressure—but surviving a wave should generally leave the run recoverable. One imperfect defense should not usually create an unavoidable death spiral.
+
+Consequences:
+
+- partial failure matters and can alter later strategic choices;
+- recovery systems must exist for damage and economic setbacks that are expected to persist;
+- scenario balance should distinguish “under pressure” from “functionally doomed”;
+- deterministic simulation and scenario acceptance should cover recovery after imperfect waves, not only flawless wins and Town Hall destruction;
+- severe losses may still make a run difficult, but ordinary attrition should preserve meaningful player agency.
+
+### Question 1.13 — How should damaged settlement structures recover?
+
+After a raid damages but does not destroy buildings, what should restore them?
+
+- **A — Automatic repair between raids:** surviving structures repair themselves during preparation time, possibly at a fixed rate and without direct player allocation.
+- **B — Fully explicit repair economy:** repairs require player-issued repair orders, worker time, and resource spending; unrepaired damage persists indefinitely.
+- **C — Worker-driven repair with bounded automation:** repairs consume real resources and worker/logistics capacity, but eligible repair work can be assigned automatically according to player priorities rather than requiring repetitive per-building orders.
