@@ -110,3 +110,28 @@ What should the player fundamentally be defending or trying to accomplish?
 - **A — Always defend the Town Hall:** every normal scenario has the same primary objective: keep the central settlement/Town Hall alive through the final raid.
 - **B — Fully variable objectives:** scenarios may replace settlement defense with substantially different primary objectives such as escorts, timed survival, protecting multiple targets, evacuation, or destruction objectives.
 - **C — Stable settlement-defense core with scenario-specific secondary objectives:** keeping the settlement/Town Hall alive remains the universal primary condition, while scenarios may add meaningful secondary objectives, constraints, or optional goals without replacing the core game.
+
+
+### Decision 1.10 — Stable settlement-defense core with scenario-specific secondary objectives
+
+**Answers 1.9.**
+
+Choose **C**.
+
+Keeping the settlement and Town Hall alive remains the universal primary objective of normal Raid Defense scenarios. Individual scenarios may add meaningful secondary objectives, constraints, or optional goals, but they do not replace the core settlement-defense game.
+
+Consequences:
+
+- every scenario remains recognizably Raid Defense;
+- secondary objectives may change priorities without requiring a different primary game loop;
+- scenario victory still requires surviving the authored final raid;
+- optional goals can drive score, rewards, unlocks, or challenge variants without making them the sole authority for ordinary victory;
+- the core simulation and acceptance model can retain one universal settlement-loss condition while scenario definitions add extra tracked objectives.
+
+### Question 1.11 — How should partial raid damage affect a run?
+
+If raiders get through defenses but do not destroy the Town Hall, what should the normal consequence be?
+
+- **A — Mostly binary survival:** losses before Town Hall destruction are limited; surviving the wave largely resets the immediate danger, so failure pressure is concentrated on the final Town Hall loss.
+- **B — Persistent attrition:** raids can permanently destroy buildings, kill population, steal resources, and leave the settlement substantially weakened across later waves.
+- **C — Recoverable attrition:** raids can steal resources, damage buildings, and cause meaningful setbacks that persist into later waves, but core progression should generally remain recoverable rather than allowing one imperfect wave to create an unrecoverable death spiral.
