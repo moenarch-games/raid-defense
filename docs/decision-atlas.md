@@ -85,3 +85,28 @@ What should define the battlefield, resource layout, gates, and other major scen
 - **A — Authored scenarios:** each scenario has a deliberately designed map and fixed major layout. Randomness may affect cosmetic details only.
 - **B — Procedural scenarios:** scenario identity is mostly rules plus a seed; battlefield layout, resources, and routes are generated.
 - **C — Authored structure with deterministic procedural variation:** each scenario defines its major map shape, gates, objectives, roster, and important landmarks, while a seed can vary bounded details such as forest placement, minor terrain dressing, or optional resource distribution without changing the scenario's core identity.
+
+
+### Decision 1.8 — Authored scenarios with deterministic procedural variation
+
+**Answers 1.7.**
+
+Choose **C**.
+
+Each scenario has an authored core identity: its major battlefield shape, gates, objectives, strategic roster, important landmarks, and other defining structure are deliberate scenario content. A deterministic seed may vary bounded details that do not erase that identity, such as forest placement, minor terrain dressing, or controlled resource distribution.
+
+Consequences:
+
+- scenarios can be designed and balanced around intentional strategic problems;
+- replayability may come from deterministic bounded variation without turning every map into an unrelated procedural level;
+- scenario-defining topology and objectives remain explicit authored inputs;
+- procedural generation must respect scenario constraints and remain reproducible from the scenario definition plus seed;
+- acceptance tests can pin both the authored invariants and deterministic seeded variation.
+
+### Question 1.9 — What is the objective model for normal scenarios?
+
+What should the player fundamentally be defending or trying to accomplish?
+
+- **A — Always defend the Town Hall:** every normal scenario has the same primary objective: keep the central settlement/Town Hall alive through the final raid.
+- **B — Fully variable objectives:** scenarios may replace settlement defense with substantially different primary objectives such as escorts, timed survival, protecting multiple targets, evacuation, or destruction objectives.
+- **C — Stable settlement-defense core with scenario-specific secondary objectives:** keeping the settlement/Town Hall alive remains the universal primary condition, while scenarios may add meaningful secondary objectives, constraints, or optional goals without replacing the core game.
