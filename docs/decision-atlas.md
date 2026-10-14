@@ -269,3 +269,23 @@ Keep this distinct from Decision 1.4: a completed scenario still starts a fresh 
 - **A — Player claim:** spend resources to claim an adjacent region during preparation.
 - **B — Exploration:** send workers/scouts to discover and secure a new area.
 - **C — Wave milestone:** surviving specified raids automatically opens additional territory.
+
+### Decision 6.3 — Exploration-driven territorial expansion
+
+**Answers 6.2.**
+
+Choose **B — Exploration**.
+
+During a scenario, expanding the usable settlement territory requires a physical expedition: the player sends workers or scouts to investigate and secure adjacent land. Merely paying for an adjacent tile or surviving a specified wave does not automatically expand the settlement. Exploration must have real travel and exposure consequences, grounded in authoritative unit movement, terrain, and day/night behavior.
+
+Secured territory makes additional resource sites accessible and expands the frontier the player must protect, including credible additional raid approach angles. The gradual risk-versus-reward expansion in Decision 6.1 remains essential. Respect authored scenario identity and deterministic bounded variation (Decision 1.8), replay identity, valid routes, and Rust-owned world state.
+
+This establishes **exploration as the acquisition mechanic** but does not yet decide whether existing workers or specialized scouts undertake expeditions, or what turns discovered land into secured/buildable territory. Those consequential conditions must not be silently selected by implementation.
+
+### Question 6.4 — What secures an explored region?
+
+After an expedition discovers new territory, what is required before the settlement may exploit resources and build there?
+
+- **A — Expedition reaches the frontier:** reaching and surveying the region secures it; the challenge is the journey and ensuing exposure.
+- **B — Establish an outpost:** the player must deliver resources and construct a forward claim outpost before the region becomes usable; the challenge is sustained logistics.
+- **C — Remove hostile control:** the region is secured by defeating or driving off local enemies; the challenge is offensive combat beyond the established base.
