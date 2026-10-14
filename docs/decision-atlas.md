@@ -175,6 +175,16 @@ Preserve authoritative phase timing and the existing pause of ordinary logistics
 - **B — Distributed shelter:** people use reachable Houses or the Town Hall, making shelter placement matter.
 - **C — Assigned shelter:** the player designates each worker's building or garrison.
 
+### Decision 2.3 — Distributed overnight shelters
+
+**Answers 2.2.**
+
+Choose **B — Distributed shelter** for the initial game.
+
+During the pre-raid rally, workers automatically retreat to reachable completed Houses or the Town Hall and shelter there at night rather than continue exposed outdoor jobs. Building placement should matter to retreat distance and settlement safety; no per-worker manual shelter assignment is required initially. Workers return to ordinary logistics work during the next day. Use the existing physical-worker, authoritative pathing and day/night systems; do not teleport workers or model a browser-only refuge.
+
+This is **not** approval to staff or man combat towers with people in the initial game. That remains a possible later progression feature (Question 4.4). The exact automatic refuge selection, handling of unavailable/full shelters and stragglers, and presentation must remain consistent with the existing authoritative occupancy, population and rally rules rather than creating a competing shelter subsystem.
+
 ## 3. Raiding and resource recovery
 
 ### Decision 3.1 — Raiders steal cargo and must escape
@@ -223,6 +233,10 @@ The timing, concrete ammunition chain and affected tower roster remain scenario/
 - **A — Local stock:** workers deliver finite ammunition to each consuming tower.
 - **B — Supply network:** towers draw from nearby connected depots.
 - **C — Shared pool:** a centralized settlement ammunition stock is consumed by towers without deliveries.
+
+### Question 4.4 — Later personnel-operated towers
+
+Some more advanced towers might eventually need actual personnel stationed inside to operate. Should personnel-operated towers become a later gameplay mechanic, and if so, what tradeoff should exist between defense staffing and available daytime workers? This is exploratory and **not** an approved current feature; ordinary towers remain automated without requiring workers.
 
 ## 5. Movement, logistics and fortification
 
