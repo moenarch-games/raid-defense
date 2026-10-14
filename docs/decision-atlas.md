@@ -160,3 +160,83 @@ After a raid damages but does not destroy buildings, what should restore them?
 - **A — Automatic repair between raids:** surviving structures repair themselves during preparation time, possibly at a fixed rate and without direct player allocation.
 - **B — Fully explicit repair economy:** repairs require player-issued repair orders, worker time, and resource spending; unrepaired damage persists indefinitely.
 - **C — Worker-driven repair with bounded automation:** repairs consume real resources and worker/logistics capacity, but eligible repair work can be assigned automatically according to player priorities rather than requiring repetitive per-building orders.
+
+## 2. Day/night settlement cycle
+
+### Decision 2.1 — Prepare, survive, recover
+
+Daytime is for worker activity, harvesting, hauling, construction, deployment and expansion. A distinct pre-raid rally leads into nighttime raids, when workers retreat into settlement buildings rather than continue exposed outdoor jobs. The following morning gives the player a chance to assess stolen resources and damage, rebuild, redirect workers and revise the defensive layout before the next night.
+
+Preserve authoritative phase timing and the existing pause of ordinary logistics during active raids. Losses are meaningful but recoverable under Decision 1.12. This does not answer the repair-allocation Question 1.13.
+
+### Question 2.2 — Which buildings shelter workers overnight?
+
+- **A — Central shelter:** everyone returns to the Town Hall.
+- **B — Distributed shelter:** people use reachable Houses or the Town Hall, making shelter placement matter.
+- **C — Assigned shelter:** the player designates each worker's building or garrison.
+
+## 3. Raiding and resource recovery
+
+### Decision 3.1 — Raiders steal cargo and must escape
+
+Raiders pursue reachable resource stockpiles, take only available material into bounded personal cargo and attempt to leave the battlefield once their bags are full. Resource theft is not complete merely because a raider reached storage: cargo remains physically at risk during the retreat. Killing a loaded raider before escape makes the stolen goods retrievable; a successful escape removes the carried goods from the settlement's recoverable resources.
+
+A kill never generates fresh resources. Distinguish goods still stored, carried by raiders, dropped for recovery and successfully escaped. Raider targeting and retreat remain deterministic simulation behavior.
+
+### Question 3.2 — How does dropped stolen cargo return to storage?
+
+- **A — Automatic recovery:** a killed carrier's cargo goes straight back to settlement storage.
+- **B — Physical recovery:** cargo drops where the raider died and workers collect and deliver it.
+- **C — Player collection:** cargo drops in the world and requires an explicit player pickup action.
+
+## 4. Threats and staged defense complexity
+
+### Decision 4.1 — Different raiders demand different counters
+
+Raider archetypes must create recognizable tactical differences, with different tower or defensive types particularly effective against different threats. Progression should introduce stronger and specialized enemies, including climactic boss-scale raids, rather than relying on numbers and health scaling alone. Towers and threat types must communicate their tactical roles in actual play.
+
+This builds on the current Arrow/Cannon towers and Basic/Advanced raider profiles without treating the presence of two named types as sufficient evidence of counterplay.
+
+### Decision 4.2 — Complexity grows through the economy
+
+Begin with a comprehensible resource economy and arrow towers that do not require finite ammunition. Later phases introduce stronger defenses that consume ammunition produced by the settlement, creating a consequential economic cost and the possibility of supply shortages. More elaborate routes and defenses follow the initial understandable combat/economy loop rather than overwhelming the opening.
+
+The timing, concrete ammunition chain and affected tower roster remain scenario/progression design choices, not browser-only unlock logic.
+
+### Question 4.3 — How should produced ammunition reach and supply towers?
+
+- **A — Local stock:** workers deliver finite ammunition to each consuming tower.
+- **B — Supply network:** towers draw from nearby connected depots.
+- **C — Shared pool:** a centralized settlement ammunition stock is consumed by towers without deliveries.
+
+## 5. Movement, logistics and fortification
+
+### Decision 5.1 — Efficient worker routes compete with difficult raider routes
+
+Layout decisions must create a tradeoff between short, productive worker paths and long, defensible raider approaches. Resource buildings, defenses and terrain/path features all affect this balance; optimizing one side must not erase the strategic importance of the other. Preserve legal worker access and raider routes.
+
+Potential later construction tools include roads, walls, barricades, gates, bridges, tunnels, mines and traps. These examples are not individually approved as first-release requirements.
+
+### Question 5.2 — How should roads affect raiders?
+
+- **A — Shared speed:** raiders and workers both benefit from roads, making efficient logistics corridors tempting invasion routes.
+- **B — Worker advantage:** workers move faster on roads; raiders may traverse them but receive no speed bonus.
+- **C — Restricted corridors:** worker roads can be made inaccessible to raiders through controlled access.
+
+### Question 5.3 — Which advanced route-shaping construction should be introduced first?
+
+Walls and barricades, controllable gates, traps and mines, and bridges or tunnels are candidates. Their order and concrete mechanics are open; do not treat this list as a promise to implement them all.
+
+## 6. Expansion and frontier exposure
+
+### Decision 6.1 — Expansion trades richer resources for harder defense
+
+Within a scenario, the usable settlement territory gradually expands. New territory exposes additional resource sites and, over time, different resource kinds. Expansion also creates a larger defensive footprint and additional viable directions or fronts for raids, so additional production carries a real protection and logistics cost.
+
+Keep this distinct from Decision 1.4: a completed scenario still starts a fresh settlement in the next scenario. How territory is acquired and how the authoritative grid/map represents expansion remain open.
+
+### Question 6.2 — What unlocks the next territory during a run?
+
+- **A — Player claim:** spend resources to claim an adjacent region during preparation.
+- **B — Exploration:** send workers/scouts to discover and secure a new area.
+- **C — Wave milestone:** surviving specified raids automatically opens additional territory.
