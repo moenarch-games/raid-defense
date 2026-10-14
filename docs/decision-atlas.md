@@ -189,6 +189,21 @@ A kill never generates fresh resources. Distinguish goods still stored, carried 
 - **B — Physical recovery:** cargo drops where the raider died and workers collect and deliver it.
 - **C — Player collection:** cargo drops in the world and requires an explicit player pickup action.
 
+### Decision 3.3 — Worker recovery of dropped raid loot
+
+**Answers 3.2.**
+
+Choose **B — Physical recovery**.
+
+When a loaded raider is killed before successfully escaping, its carried stolen resources are dropped at the death location as persistent world cargo. Workers must physically travel to the drop, pick up resources within their bounded carrying capacity, and transport them to reachable settlement storage before the resources become spendable again. Recovery is an ordinary worker/logistics task during the daytime; it does not auto-credit the settlement, require player clicking the drop, or generate new resources.
+
+Consequences:
+
+- the theft, retreat, death-drop, pickup, delivery, and successful-escape transitions must preserve resource quantities exactly;
+- dropping loot during a raid creates visible recovery work for the next preparation phase rather than restoring resources instantly;
+- dropped cargo must survive phase changes, save/resume/replay, and temporarily unavailable storage without disappearing or being counted as available settlement stock;
+- worker allocation, navigation, delivery, presentation, and rules/checksum identity remain authoritative in the Rust core, consistent with Decisions 2.1 and 3.1.
+
 ## 4. Threats and staged defense complexity
 
 ### Decision 4.1 — Different raiders demand different counters
