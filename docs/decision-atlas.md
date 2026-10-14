@@ -310,3 +310,24 @@ Once the player chooses an adjacent region to explore, which kind of unit must t
 - **B — Dedicated scouts:** recruit specialized non-production scouting units, creating a distinct exploration investment.
 - **C — Organized expedition group:** assemble a group that includes explorers and escort personnel, making safe exploration depend on a managed expedition instead of an individual worker.
 
+### Decision 6.7 — Existing workers undertake frontier expeditions
+
+**Answers 6.6.**
+
+Choose **A — Existing workers**.
+
+A frontier expedition assigns one or more of the settlement's existing physical workers to travel into adjacent territory, rather than requiring a dedicated scouting unit or an organized escort party. Workers assigned to exploration temporarily stop their regular harvesting, transport or construction duties. Their real movement, availability and return create the economic opportunity cost and exposure of expansion.
+
+Exploration does not itself claim land: the player still needs a worker-supplied, completed frontier outpost before the region becomes usable (Decision 6.5). Expeditions participate in the authoritative day/night schedule, recall and deterministic routing; the game must not spawn free scouts, teleport workers to the destination, or secretly run exploration as a passive production timer.
+
+The precise worker-selection control and additional specialist units are not decided here. This Decision requires the existing-worker expedition journey, not a new worker-management system.
+
+### Question 6.8 — What happens when an established outpost is destroyed?
+
+If a completed frontier outpost is later destroyed by raiders, what happens to the territory it secured?
+
+- **A — Lose the claim:** the region becomes unsecured until workers rebuild an outpost, preventing its resources and building sites from being used as ordinary settlement territory.
+- **B — Keep the claim:** territory stays usable once secured; the outpost can be rebuilt for its own functions, but the claim itself is permanent within that run.
+
+Do not infer a claim-loss rule from ordinary building damage. This only becomes blocking when outpost destruction is part of a proposed gameplay slice.
+
