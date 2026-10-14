@@ -269,6 +269,24 @@ When introducing finite ammunition into the playable progression, which tower ch
 - **A — Existing Cannon towers:** the existing Cannon archetype becomes an ammunition-consuming advanced defense in scenarios that introduce ammunition; Arrow towers remain unlimited.
 - **B — New advanced tower:** keep the existing Arrow and Cannon behavior, and introduce a separate powerful ammunition-consuming tower when the ammunition economy arrives.
 
+### Decision 4.7 — Introduce a new advanced ammunition-consuming tower
+
+**Answers 4.6.**
+
+Choose **B — New advanced tower**.
+
+Introduce a distinct, more powerful advanced tower archetype as the first defense to require manufactured, finite ammunition. Existing Arrow and Cannon towers retain their current ammunition-independent firing behavior; introducing the new tower must not impose hidden supply requirements on them. The new tower only fires when supplied from its own bounded stock, replenished by real worker deliveries from the settlement's ammunition-production economy (Decision 4.5). This creates an optional higher-power, higher-logistics defense for scenarios that make it available under the scenario-defined roster (Decision 1.6), without burdening the opening defense loop (Decision 4.2).
+
+The advanced tower's specific combat role, ammunition recipe and first scenario availability remain separate design choices. Do not silently choose a combat niche or change existing Cannon mechanics as an implementation shortcut.
+
+### Question 4.8 — What combat role justifies the first ammunition-consuming tower?
+
+The new tower must offer a recognizably different tactical tool from current Arrow and Cannon towers. Which threat should it primarily counter?
+
+- **A — Armored elites and bosses:** expensive, high-impact focused shots that reward keeping a key defense supplied against a few formidable enemies.
+- **B — Dense raider waves:** limited heavy rounds that punish clustered enemies with area damage but are inefficient against isolated targets.
+- **C — Dangerous fast raiders:** ammunition-powered disruption (for example slowing or disabling) that buys time for ordinary damage towers but does not replace their damage output.
+
 ## 5. Movement, logistics and fortification
 
 ### Decision 5.1 — Efficient worker routes compete with difficult raider routes
