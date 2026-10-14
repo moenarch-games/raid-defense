@@ -331,3 +331,21 @@ If a completed frontier outpost is later destroyed by raiders, what happens to t
 
 Do not infer a claim-loss rule from ordinary building damage. This only becomes blocking when outpost destruction is part of a proposed gameplay slice.
 
+### Decision 6.9 — Destroyed outposts revoke territory claims
+
+**Answers 6.8.**
+
+Choose **A — Lose the claim**.
+
+If raiders destroy an established frontier outpost, its region becomes unsecured. The territory cannot be exploited as ordinary settlement land: access to its resources and eligibility for new construction are suspended until workers physically rebuild a functioning outpost. The earlier discovery remains known, so recovering a lost claim must not require discovering the same region again. Reclaiming uses actual delivered settlement materials and worker effort; it does not happen immediately or for free.
+
+This creates a continuing defensive obligation for expanded territory while preserving meaningful recovery after a failed defense (Decision 1.12). The lost/claimed status and any restored access must be authoritative, deterministic and replay-safe. This Decision does **not** by itself determine what happens to already constructed buildings, inventories or workers caught in the lost region (Question 6.10).
+
+### Question 6.10 — What happens to existing buildings when an outpost claim is lost?
+
+When a region becomes unsecured, what happens to the buildings the player already constructed there?
+
+- **A — Intact but inactive:** their structures and stored contents remain; production, worker jobs and ordinary operation stop until a rebuilt outpost restores the claim.
+- **B — Automatically destroyed:** losing the claim also destroys buildings in that region; rebuilding the outpost is only the beginning of recovery.
+- **C — Isolated survivors:** previously built structures remain and can still operate where physically possible, but new construction and natural-resource access are unavailable until the region is reclaimed.
+
