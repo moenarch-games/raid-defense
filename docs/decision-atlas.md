@@ -161,6 +161,18 @@ After a raid damages but does not destroy buildings, what should restore them?
 - **B — Fully explicit repair economy:** repairs require player-issued repair orders, worker time, and resource spending; unrepaired damage persists indefinitely.
 - **C — Worker-driven repair with bounded automation:** repairs consume real resources and worker/logistics capacity, but eligible repair work can be assigned automatically according to player priorities rather than requiring repetitive per-building orders.
 
+### Decision 1.14 — Worker-driven repairs with player priorities
+
+**Answers 1.13.**
+
+Choose **C — Worker-driven repair with bounded automation**.
+
+Damaged but surviving settlement buildings are restored by physical workers using real settlement materials and work time. Eligible repairs are automatically scheduled according to priorities that the player can adjust, rather than requiring an individual repair order for each building. Repair work competes with resource production, construction and hauling for available people, materials, time and safe routes. Players can observe which buildings require repair, their current repair progress and when a shortage or competing work delays restoration.
+
+Repairs respect the authoritative day/night cycle: workers retreat during the pre-raid rally and do not continue exposed repair jobs during normal nighttime raids. Only delivered/consumed materials and completed work can restore authoritative building health; no passive free healing or browser-predicted repair outcomes. Worker assignment, resource conservation, priority evaluation and progression must be deterministic and represented through the Rust simulation, replay and checksums.
+
+Repairing a **surviving damaged building** is different from reconstructing one that was destroyed. A destroyed frontier outpost must still be rebuilt to regain its territory claim (Decisions 6.9 and 6.11), not revived through normal repair. This decision does not choose exact balance numbers or mandate manually assigning workers.
+
 ## 2. Day/night settlement cycle
 
 ### Decision 2.1 — Prepare, survive, recover
