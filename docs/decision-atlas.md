@@ -349,3 +349,15 @@ When a region becomes unsecured, what happens to the buildings the player alread
 - **B — Automatically destroyed:** losing the claim also destroys buildings in that region; rebuilding the outpost is only the beginning of recovery.
 - **C — Isolated survivors:** previously built structures remain and can still operate where physically possible, but new construction and natural-resource access are unavailable until the region is reclaimed.
 
+### Decision 6.11 — Existing frontier buildings remain intact but inactive
+
+**Answers 6.10.**
+
+Choose **A — Intact but inactive**.
+
+When the outpost securing a frontier region is destroyed and the territory becomes unsecured (Decision 6.9), previously constructed buildings in that region remain physically present, including their existing stored contents. They are **not automatically destroyed or emptied** because the claim was lost. Until workers physically rebuild the outpost and the region is reclaimed, the surviving buildings cannot carry out ordinary production or defensive operation, and their worker jobs and stored inventory are unavailable to the settlement's ordinary logistics and spending.
+
+Reclaiming the region restores eligibility for normal operation of surviving buildings and their retained stock; it does not require reconstructing every surviving building. Actual combat damage or a building's own destruction remains consequential. Inactive structures retain their physical footprint for routing and occupancy, and the same deterministic Rust state, snapshots, and replay/checksum rules govern loss and restoration of functionality. Workers must not continue exploiting unsecured territory through stale assignments; their movement and safe day/night handling remain subject to existing worker rules.
+
+This choice aims for **recoverable attrition** (Decision 1.12): defeating the outpost matters, but the player has a meaningful rebuilding path instead of suffering automatic destruction of an entire frontier economy.
+
