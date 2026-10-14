@@ -250,6 +250,25 @@ The timing, concrete ammunition chain and affected tower roster remain scenario/
 
 Some more advanced towers might eventually need actual personnel stationed inside to operate. Should personnel-operated towers become a later gameplay mechanic, and if so, what tradeoff should exist between defense staffing and available daytime workers? This is exploratory and **not** an approved current feature; ordinary towers remain automated without requiring workers.
 
+### Decision 4.5 — Workers deliver ammunition to individual towers
+
+**Answers 4.3.**
+
+Choose **A — Local stock**.
+
+Advanced ammunition-consuming towers each hold their own bounded, finite ammunition stock. Ammunition is produced from actual settlement resources through the authoritative economy and physically transported by existing workers to each consuming tower. Workers must reach that tower, deliver real cargo and refill its local inventory; consuming towers expend their own stock when firing and cannot fire while empty. Supply delivery therefore competes with harvesting, construction and repairs, and tower placement creates a meaningful logistical exposure.
+
+There is no settlement-wide instant ammunition pool and no implied depot-to-tower wireless supply network. Preserve actual material conservation, storage capacities, valid worker paths, determinism, save/replay identity, and the normal recall and suspension of outdoor work during night raids. Workers may stock towers during preparation so that stored ammunition can be used while workers shelter. Ordinary opening Arrow towers remain unlimited as established in Decision 4.2; they must not become ammunition-dependent merely because advanced towers are.
+
+The first consuming tower family, its ammunition recipe and introduction point are not chosen by this answer. These remain product/scenario design choices, not license to invent a second production system or change existing Cannon behavior without a decision.
+
+### Question 4.6 — Which tower should first require manufactured ammunition?
+
+When introducing finite ammunition into the playable progression, which tower changes?
+
+- **A — Existing Cannon towers:** the existing Cannon archetype becomes an ammunition-consuming advanced defense in scenarios that introduce ammunition; Arrow towers remain unlimited.
+- **B — New advanced tower:** keep the existing Arrow and Cannon behavior, and introduce a separate powerful ammunition-consuming tower when the ammunition economy arrives.
+
 ## 5. Movement, logistics and fortification
 
 ### Decision 5.1 — Efficient worker routes compete with difficult raider routes
