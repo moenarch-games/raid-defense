@@ -287,6 +287,18 @@ The new tower must offer a recognizably different tactical tool from current Arr
 - **B — Dense raider waves:** limited heavy rounds that punish clustered enemies with area damage but are inefficient against isolated targets.
 - **C — Dangerous fast raiders:** ammunition-powered disruption (for example slowing or disabling) that buys time for ordinary damage towers but does not replace their damage output.
 
+### Decision 4.9 — Heavy precision tower counters armored elites and bosses
+
+**Answers 4.8.**
+
+Choose **A — Armored elites and bosses**.
+
+The first new advanced ammunition-consuming tower is a focused high-impact defense against **heavily armored elite raiders and bosses**, not an area-damage anti-swarm tower or primarily a slowing/disruption tower. Its scarce, manufactured shots should be meaningfully more effective against a few formidable targets than the existing Arrow and Cannon towers, while those ordinary towers remain useful and operate without finite ammunition (Decisions 4.1, 4.2 and 4.7). Make the intended counter relationship intelligible to the player through actual encounter behavior and readable tower/enemy feedback, not only labels.
+
+Its finite ammunition must be produced with real settlement resources and delivered to the tower's bounded local stock by physical workers (Decision 4.5). Stockpiling during daytime enables nighttime firing; running empty suspends this tower's attack until resupplied, making the route and allocation to a boss defense a genuine economic choice. Preserve scenario-defined rosters (Decision 1.6) and deterministic Rust authority for targeting, damage, cargo, consumption and replay.
+
+This Decision settles **tactical specialization**, not a particular weapon name, ammunition recipe, numerical balance, or unlock-wave number. Those must not be turned into new approval blockers absent a material product tradeoff.
+
 ## 5. Movement, logistics and fortification
 
 ### Decision 5.1 — Efficient worker routes compete with difficult raider routes
