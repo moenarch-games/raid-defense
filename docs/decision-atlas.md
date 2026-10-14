@@ -289,3 +289,24 @@ After an expedition discovers new territory, what is required before the settlem
 - **A — Expedition reaches the frontier:** reaching and surveying the region secures it; the challenge is the journey and ensuing exposure.
 - **B — Establish an outpost:** the player must deliver resources and construct a forward claim outpost before the region becomes usable; the challenge is sustained logistics.
 - **C — Remove hostile control:** the region is secured by defeating or driving off local enemies; the challenge is offensive combat beyond the established base.
+
+### Decision 6.5 — Securing explored territory requires a constructed outpost
+
+**Answers 6.4.**
+
+Choose **B — Establish an outpost**.
+
+Exploration reveals the adjacent frontier, but discovery by itself does not make that territory available for settlement construction or resource exploitation. The player must establish a forward claim outpost there: workers physically deliver construction resources, complete the outpost, and thereby secure the region for use. Both the expedition and the outpost's logistics have real path, time, and exposure consequences. The claim must not complete instantly on a click, on entering the region, or automatically after a wave.
+
+The outpost links new usable land and resources to the settlement while extending the area that must be defended and exposing credible new raid approaches (Decisions 6.1 and 6.3). Reuse the authoritative economy, construction and worker movement principles; preserve valid routes, authored scenario structure, deterministic replay/checksums, and a playable day/night flow.
+
+The specific exploring unit type (workers, scouts or an expedition group), the effect of later outpost destruction, and outpost tuning remain unresolved. Do not infer a new mandatory scout class or arbitrary regional ownership rules from this Decision.
+
+### Question 6.6 — Who performs a frontier expedition?
+
+Once the player chooses an adjacent region to explore, which kind of unit must travel there?
+
+- **A — Existing workers:** send one or more normal workers, temporarily sacrificing resource production and hauling capacity.
+- **B — Dedicated scouts:** recruit specialized non-production scouting units, creating a distinct exploration investment.
+- **C — Organized expedition group:** assemble a group that includes explorers and escort personnel, making safe exploration depend on a managed expedition instead of an individual worker.
+
