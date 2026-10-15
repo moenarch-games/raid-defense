@@ -1,0 +1,541 @@
+# Raid Defense Decision Atlas
+
+This document is the append-only product decision authority for Raid Defense.
+
+Questions capture unresolved product choices. Decisions answer earlier questions explicitly. Existing IDs must not be renumbered, removed, or reused.
+
+## 1. Game structure
+
+### Question 1.1 — Victory model
+
+What is the victory model for a normal game?
+
+- **A — Finite defense:** a scenario has a defined final wave, probably culminating in a major boss/raid. Survive it and win.
+- **B — Endless survival:** there is no normal victory. Raids escalate indefinitely until the settlement falls.
+- **C — Finite victory + optional endless continuation:** each normal scenario has a clear final raid and victory state. After winning, the player may continue into increasingly difficult endless raids.
+
+### Decision 1.2 — Finite victory with optional endless continuation
+
+**Answers 1.1.**
+
+Choose **C**.
+
+Each normal Raid Defense scenario has a defined victory point and final raid. Winning completes the scenario. After victory, the player may continue the same settlement into optional endless raids with increasing difficulty.
+
+Consequences:
+
+- normal scenarios can be balanced toward a concrete completion target;
+- final raids and bosses can provide scenario climax;
+- endless mode extends the same run rather than replacing the primary victory model;
+- progression, scoring, replay, and scenario acceptance can distinguish “scenario won” from “run ended”;
+- continuing after victory must not revoke the already-earned scenario victory.
+
+### Question 1.3 — Persistence between scenarios
+
+How much gameplay state should persist when moving from one completed scenario to another?
+
+- **A — Independent scenarios:** every scenario starts from a fresh settlement and standard starting capabilities. Completion may unlock access to more scenarios, but no gameplay power carries over.
+- **B — Persistent campaign settlement:** resources, buildings, population, upgrades, or other substantial gameplay state carry from scenario to scenario.
+- **C — Fresh settlements with horizontal meta-progression:** each scenario starts a fresh economy and settlement, while completing scenarios can unlock new maps, tower/building choices, or other strategic options without carrying the previous settlement itself forward.
+
+
+### Decision 1.4 — Fresh settlements with horizontal meta-progression
+
+**Answers 1.3.**
+
+Choose **C**.
+
+Each scenario starts with a fresh settlement, economy, buildings, resources, and population. Completing scenarios may unlock additional maps and strategic options for future runs, but the previous settlement itself does not carry forward.
+
+Consequences:
+
+- scenario balance remains self-contained and reproducible from its starting state;
+- campaign progression expands the player's option space rather than accumulating settlement resources or infrastructure;
+- persistent progression must not silently inject previous-run economy, buildings, population, or combat state into a new scenario;
+- replay/checksum identity for a scenario can remain grounded in that scenario's seed, rules, unlock/loadout inputs, commands, and simulation steps.
+
+### Question 1.5 — How should unlocked strategic options enter a scenario?
+
+Once towers, buildings, or other strategic options have been unlocked through progression, how should they be available in a fresh scenario?
+
+- **A — All unlocked options available:** every unlocked option is available during every compatible scenario.
+- **B — Pre-scenario loadout:** before starting, the player chooses a bounded subset of unlocked towers/buildings/options to bring into that scenario.
+- **C — Scenario-defined roster:** each scenario defines which unlocked options may be used, with little or no player loadout choice.
+
+
+### Decision 1.6 — Scenario-defined strategic roster
+
+**Answers 1.5.**
+
+Choose **C**.
+
+Each scenario defines the towers, buildings, and other strategic options that may be used there. Meta-progression may unlock options globally, but an unlock does not imply universal availability in every scenario.
+
+Consequences:
+
+- scenario designers can shape distinct strategic problems instead of balancing every scenario against the full unlocked catalog;
+- scenario acceptance can name the intended roster explicitly;
+- progression unlocks expand the set of possibilities available to future scenario definitions rather than creating a universal player loadout;
+- scenario rules remain authoritative inputs and must determine availability rather than browser-only hiding.
+
+### Question 1.7 — How should scenario maps be authored?
+
+What should define the battlefield, resource layout, gates, and other major scenario structure?
+
+- **A — Authored scenarios:** each scenario has a deliberately designed map and fixed major layout. Randomness may affect cosmetic details only.
+- **B — Procedural scenarios:** scenario identity is mostly rules plus a seed; battlefield layout, resources, and routes are generated.
+- **C — Authored structure with deterministic procedural variation:** each scenario defines its major map shape, gates, objectives, roster, and important landmarks, while a seed can vary bounded details such as forest placement, minor terrain dressing, or optional resource distribution without changing the scenario's core identity.
+
+
+### Decision 1.8 — Authored scenarios with deterministic procedural variation
+
+**Answers 1.7.**
+
+Choose **C**.
+
+Each scenario has an authored core identity: its major battlefield shape, gates, objectives, strategic roster, important landmarks, and other defining structure are deliberate scenario content. A deterministic seed may vary bounded details that do not erase that identity, such as forest placement, minor terrain dressing, or controlled resource distribution.
+
+Consequences:
+
+- scenarios can be designed and balanced around intentional strategic problems;
+- replayability may come from deterministic bounded variation without turning every map into an unrelated procedural level;
+- scenario-defining topology and objectives remain explicit authored inputs;
+- procedural generation must respect scenario constraints and remain reproducible from the scenario definition plus seed;
+- acceptance tests can pin both the authored invariants and deterministic seeded variation.
+
+### Question 1.9 — What is the objective model for normal scenarios?
+
+What should the player fundamentally be defending or trying to accomplish?
+
+- **A — Always defend the Town Hall:** every normal scenario has the same primary objective: keep the central settlement/Town Hall alive through the final raid.
+- **B — Fully variable objectives:** scenarios may replace settlement defense with substantially different primary objectives such as escorts, timed survival, protecting multiple targets, evacuation, or destruction objectives.
+- **C — Stable settlement-defense core with scenario-specific secondary objectives:** keeping the settlement/Town Hall alive remains the universal primary condition, while scenarios may add meaningful secondary objectives, constraints, or optional goals without replacing the core game.
+
+
+### Decision 1.10 — Stable settlement-defense core with scenario-specific secondary objectives
+
+**Answers 1.9.**
+
+Choose **C**.
+
+Keeping the settlement and Town Hall alive remains the universal primary objective of normal Raid Defense scenarios. Individual scenarios may add meaningful secondary objectives, constraints, or optional goals, but they do not replace the core settlement-defense game.
+
+Consequences:
+
+- every scenario remains recognizably Raid Defense;
+- secondary objectives may change priorities without requiring a different primary game loop;
+- scenario victory still requires surviving the authored final raid;
+- optional goals can drive score, rewards, unlocks, or challenge variants without making them the sole authority for ordinary victory;
+- the core simulation and acceptance model can retain one universal settlement-loss condition while scenario definitions add extra tracked objectives.
+
+### Question 1.11 — How should partial raid damage affect a run?
+
+If raiders get through defenses but do not destroy the Town Hall, what should the normal consequence be?
+
+- **A — Mostly binary survival:** losses before Town Hall destruction are limited; surviving the wave largely resets the immediate danger, so failure pressure is concentrated on the final Town Hall loss.
+- **B — Persistent attrition:** raids can permanently destroy buildings, kill population, steal resources, and leave the settlement substantially weakened across later waves.
+- **C — Recoverable attrition:** raids can steal resources, damage buildings, and cause meaningful setbacks that persist into later waves, but core progression should generally remain recoverable rather than allowing one imperfect wave to create an unrecoverable death spiral.
+
+
+### Decision 1.12 — Recoverable attrition
+
+**Answers 1.11.**
+
+Choose **C**.
+
+Raids may cause meaningful persistent setbacks—such as stolen resources, damaged buildings, interrupted logistics, or population pressure—but surviving a wave should generally leave the run recoverable. One imperfect defense should not usually create an unavoidable death spiral.
+
+Consequences:
+
+- partial failure matters and can alter later strategic choices;
+- recovery systems must exist for damage and economic setbacks that are expected to persist;
+- scenario balance should distinguish “under pressure” from “functionally doomed”;
+- deterministic simulation and scenario acceptance should cover recovery after imperfect waves, not only flawless wins and Town Hall destruction;
+- severe losses may still make a run difficult, but ordinary attrition should preserve meaningful player agency.
+
+### Question 1.13 — How should damaged settlement structures recover?
+
+After a raid damages but does not destroy buildings, what should restore them?
+
+- **A — Automatic repair between raids:** surviving structures repair themselves during preparation time, possibly at a fixed rate and without direct player allocation.
+- **B — Fully explicit repair economy:** repairs require player-issued repair orders, worker time, and resource spending; unrepaired damage persists indefinitely.
+- **C — Worker-driven repair with bounded automation:** repairs consume real resources and worker/logistics capacity, but eligible repair work can be assigned automatically according to player priorities rather than requiring repetitive per-building orders.
+
+### Decision 1.14 — Worker-driven repairs with player priorities
+
+**Answers 1.13.**
+
+Choose **C — Worker-driven repair with bounded automation**.
+
+Damaged but surviving settlement buildings are restored by physical workers using real settlement materials and work time. Eligible repairs are automatically scheduled according to priorities that the player can adjust, rather than requiring an individual repair order for each building. Repair work competes with resource production, construction and hauling for available people, materials, time and safe routes. Players can observe which buildings require repair, their current repair progress and when a shortage or competing work delays restoration.
+
+Repairs respect the authoritative day/night cycle: workers retreat during the pre-raid rally and do not continue exposed repair jobs during normal nighttime raids. Only delivered/consumed materials and completed work can restore authoritative building health; no passive free healing or browser-predicted repair outcomes. Worker assignment, resource conservation, priority evaluation and progression must be deterministic and represented through the Rust simulation, replay and checksums.
+
+Repairing a **surviving damaged building** is different from reconstructing one that was destroyed. A destroyed frontier outpost must still be rebuilt to regain its territory claim (Decisions 6.9 and 6.11), not revived through normal repair. This decision does not choose exact balance numbers or mandate manually assigning workers.
+
+## 2. Day/night settlement cycle
+
+### Decision 2.1 — Prepare, survive, recover
+
+Daytime is for worker activity, harvesting, hauling, construction, deployment and expansion. A distinct pre-raid rally leads into nighttime raids, when workers retreat into settlement buildings rather than continue exposed outdoor jobs. The following morning gives the player a chance to assess stolen resources and damage, rebuild, redirect workers and revise the defensive layout before the next night.
+
+Preserve authoritative phase timing and the existing pause of ordinary logistics during active raids. Losses are meaningful but recoverable under Decision 1.12. This does not answer the repair-allocation Question 1.13.
+
+### Question 2.2 — Which buildings shelter workers overnight?
+
+- **A — Central shelter:** everyone returns to the Town Hall.
+- **B — Distributed shelter:** people use reachable Houses or the Town Hall, making shelter placement matter.
+- **C — Assigned shelter:** the player designates each worker's building or garrison.
+
+### Decision 2.3 — Distributed overnight shelters
+
+**Answers 2.2.**
+
+Choose **B — Distributed shelter** for the initial game.
+
+During the pre-raid rally, workers automatically retreat to reachable completed Houses or the Town Hall and shelter there at night rather than continue exposed outdoor jobs. Building placement should matter to retreat distance and settlement safety; no per-worker manual shelter assignment is required initially. Workers return to ordinary logistics work during the next day. Use the existing physical-worker, authoritative pathing and day/night systems; do not teleport workers or model a browser-only refuge.
+
+This is **not** approval to staff or man combat towers with people in the initial game. That remains a possible later progression feature (Question 4.4). The exact automatic refuge selection, handling of unavailable/full shelters and stragglers, and presentation must remain consistent with the existing authoritative occupancy, population and rally rules rather than creating a competing shelter subsystem.
+
+## 3. Raiding and resource recovery
+
+### Decision 3.1 — Raiders steal cargo and must escape
+
+Raiders pursue reachable resource stockpiles, take only available material into bounded personal cargo and attempt to leave the battlefield once their bags are full. Resource theft is not complete merely because a raider reached storage: cargo remains physically at risk during the retreat. Killing a loaded raider before escape makes the stolen goods retrievable; a successful escape removes the carried goods from the settlement's recoverable resources.
+
+A kill never generates fresh resources. Distinguish goods still stored, carried by raiders, dropped for recovery and successfully escaped. Raider targeting and retreat remain deterministic simulation behavior.
+
+### Question 3.2 — How does dropped stolen cargo return to storage?
+
+- **A — Automatic recovery:** a killed carrier's cargo goes straight back to settlement storage.
+- **B — Physical recovery:** cargo drops where the raider died and workers collect and deliver it.
+- **C — Player collection:** cargo drops in the world and requires an explicit player pickup action.
+
+### Decision 3.3 — Worker recovery of dropped raid loot
+
+**Answers 3.2.**
+
+Choose **B — Physical recovery**.
+
+When a loaded raider is killed before successfully escaping, its carried stolen resources are dropped at the death location as persistent world cargo. Workers must physically travel to the drop, pick up resources within their bounded carrying capacity, and transport them to reachable settlement storage before the resources become spendable again. Recovery is an ordinary worker/logistics task during the daytime; it does not auto-credit the settlement, require player clicking the drop, or generate new resources.
+
+Consequences:
+
+- the theft, retreat, death-drop, pickup, delivery, and successful-escape transitions must preserve resource quantities exactly;
+- dropping loot during a raid creates visible recovery work for the next preparation phase rather than restoring resources instantly;
+- dropped cargo must survive phase changes, save/resume/replay, and temporarily unavailable storage without disappearing or being counted as available settlement stock;
+- worker allocation, navigation, delivery, presentation, and rules/checksum identity remain authoritative in the Rust core, consistent with Decisions 2.1 and 3.1.
+
+## 4. Threats and staged defense complexity
+
+### Decision 4.1 — Different raiders demand different counters
+
+Raider archetypes must create recognizable tactical differences, with different tower or defensive types particularly effective against different threats. Progression should introduce stronger and specialized enemies, including climactic boss-scale raids, rather than relying on numbers and health scaling alone. Towers and threat types must communicate their tactical roles in actual play.
+
+This builds on the current Arrow/Cannon towers and Basic/Advanced raider profiles without treating the presence of two named types as sufficient evidence of counterplay.
+
+### Decision 4.2 — Complexity grows through the economy
+
+Begin with a comprehensible resource economy and arrow towers that do not require finite ammunition. Later phases introduce stronger defenses that consume ammunition produced by the settlement, creating a consequential economic cost and the possibility of supply shortages. More elaborate routes and defenses follow the initial understandable combat/economy loop rather than overwhelming the opening.
+
+The timing, concrete ammunition chain and affected tower roster remain scenario/progression design choices, not browser-only unlock logic.
+
+### Question 4.3 — How should produced ammunition reach and supply towers?
+
+- **A — Local stock:** workers deliver finite ammunition to each consuming tower.
+- **B — Supply network:** towers draw from nearby connected depots.
+- **C — Shared pool:** a centralized settlement ammunition stock is consumed by towers without deliveries.
+
+### Question 4.4 — Later personnel-operated towers
+
+Some more advanced towers might eventually need actual personnel stationed inside to operate. Should personnel-operated towers become a later gameplay mechanic, and if so, what tradeoff should exist between defense staffing and available daytime workers? This is exploratory and **not** an approved current feature; ordinary towers remain automated without requiring workers.
+
+### Decision 4.5 — Workers deliver ammunition to individual towers
+
+**Answers 4.3.**
+
+Choose **A — Local stock**.
+
+Advanced ammunition-consuming towers each hold their own bounded, finite ammunition stock. Ammunition is produced from actual settlement resources through the authoritative economy and physically transported by existing workers to each consuming tower. Workers must reach that tower, deliver real cargo and refill its local inventory; consuming towers expend their own stock when firing and cannot fire while empty. Supply delivery therefore competes with harvesting, construction and repairs, and tower placement creates a meaningful logistical exposure.
+
+There is no settlement-wide instant ammunition pool and no implied depot-to-tower wireless supply network. Preserve actual material conservation, storage capacities, valid worker paths, determinism, save/replay identity, and the normal recall and suspension of outdoor work during night raids. Workers may stock towers during preparation so that stored ammunition can be used while workers shelter. Ordinary opening Arrow towers remain unlimited as established in Decision 4.2; they must not become ammunition-dependent merely because advanced towers are.
+
+The first consuming tower family, its ammunition recipe and introduction point are not chosen by this answer. These remain product/scenario design choices, not license to invent a second production system or change existing Cannon behavior without a decision.
+
+### Question 4.6 — Which tower should first require manufactured ammunition?
+
+When introducing finite ammunition into the playable progression, which tower changes?
+
+- **A — Existing Cannon towers:** the existing Cannon archetype becomes an ammunition-consuming advanced defense in scenarios that introduce ammunition; Arrow towers remain unlimited.
+- **B — New advanced tower:** keep the existing Arrow and Cannon behavior, and introduce a separate powerful ammunition-consuming tower when the ammunition economy arrives.
+
+### Decision 4.7 — Introduce a new advanced ammunition-consuming tower
+
+**Answers 4.6.**
+
+Choose **B — New advanced tower**.
+
+Introduce a distinct, more powerful advanced tower archetype as the first defense to require manufactured, finite ammunition. Existing Arrow and Cannon towers retain their current ammunition-independent firing behavior; introducing the new tower must not impose hidden supply requirements on them. The new tower only fires when supplied from its own bounded stock, replenished by real worker deliveries from the settlement's ammunition-production economy (Decision 4.5). This creates an optional higher-power, higher-logistics defense for scenarios that make it available under the scenario-defined roster (Decision 1.6), without burdening the opening defense loop (Decision 4.2).
+
+The advanced tower's specific combat role, ammunition recipe and first scenario availability remain separate design choices. Do not silently choose a combat niche or change existing Cannon mechanics as an implementation shortcut.
+
+### Question 4.8 — What combat role justifies the first ammunition-consuming tower?
+
+The new tower must offer a recognizably different tactical tool from current Arrow and Cannon towers. Which threat should it primarily counter?
+
+- **A — Armored elites and bosses:** expensive, high-impact focused shots that reward keeping a key defense supplied against a few formidable enemies.
+- **B — Dense raider waves:** limited heavy rounds that punish clustered enemies with area damage but are inefficient against isolated targets.
+- **C — Dangerous fast raiders:** ammunition-powered disruption (for example slowing or disabling) that buys time for ordinary damage towers but does not replace their damage output.
+
+### Decision 4.9 — Heavy precision tower counters armored elites and bosses
+
+**Answers 4.8.**
+
+Choose **A — Armored elites and bosses**.
+
+The first new advanced ammunition-consuming tower is a focused high-impact defense against **heavily armored elite raiders and bosses**, not an area-damage anti-swarm tower or primarily a slowing/disruption tower. Its scarce, manufactured shots should be meaningfully more effective against a few formidable targets than the existing Arrow and Cannon towers, while those ordinary towers remain useful and operate without finite ammunition (Decisions 4.1, 4.2 and 4.7). Make the intended counter relationship intelligible to the player through actual encounter behavior and readable tower/enemy feedback, not only labels.
+
+Its finite ammunition must be produced with real settlement resources and delivered to the tower's bounded local stock by physical workers (Decision 4.5). Stockpiling during daytime enables nighttime firing; running empty suspends this tower's attack until resupplied, making the route and allocation to a boss defense a genuine economic choice. Preserve scenario-defined rosters (Decision 1.6) and deterministic Rust authority for targeting, damage, cargo, consumption and replay.
+
+This Decision settles **tactical specialization**, not a particular weapon name, ammunition recipe, numerical balance, or unlock-wave number. Those must not be turned into new approval blockers absent a material product tradeoff.
+
+### Decision 4.10 — Selected later advanced towers use existing workers as operators
+
+**Answers 4.4.**
+
+Choose **B — Staff selected advanced towers with existing workers**.
+
+At a later stage of the game, some advanced tower types require actual personnel drawn from the settlement's **existing physical worker population** to operate. Staffing is a real allocation decision: while assigned to tower duty, those workers are unavailable for harvesting, hauling, repairs, ammunition production, construction and other civilian jobs. A tower that requires operators must not provide its normal combat capability from free or invisible personnel; assignment and operational readiness must be legible in the played game.
+
+This is a **later advanced-tower mechanic**, not a retrofit of existing Arrow or Cannon towers. It also does not automatically add a crew requirement to the first ammunition-consuming precision tower already specified in Decisions 4.7/4.9 and tracked in issue #52. That tower's currently approved ammunition-and-combat slice remains distinct until a specific staffed-tower roster or progression decision is approved. Dedicated soldiers or a separate recruitment economy are not required by this choice.
+
+Staffing must use Rust-authoritative workers, movement, assignments, eligibility, combat and deterministic replay/checksums; do not build a browser-only staffing counter. **Nighttime staffing versus the existing worker-shelter rule (Decisions 2.1 and 2.3) remains unresolved in Question 4.11**. Do not silently treat towers as shelters or expose workers in raids without a deliberate product decision.
+
+### Question 4.11 — How are assigned tower operators protected during night raids?
+
+Some later towers require existing workers to operate during a raid, while ordinary workers shelter in Houses or Town Hall (Decision 2.3). How should tower crew behave?
+
+- **A — Sheltered tower garrison:** an assigned worker physically reaches and remains inside the staffed tower during the raid; that tower provides protected shelter to its own operators while they operate it.
+- **B — Exposed combat crew:** an assigned worker operates from a vulnerable position at the tower during the raid and can be attacked as personnel, accepting greater risk than ordinary sheltered workers.
+
+Neither alternative permits workers to operate two places at once, free crew creation, or ordinary outdoor economic work during night raids. Which *tower types* first require staffing is still a later progression choice.
+
+### Decision 4.12 — Crewed towers shelter their assigned operators
+
+**Answers 4.11.**
+
+Choose **A — Sheltered tower garrison**.
+
+For selected *later* advanced towers that require staff (Decision 4.10), assigned **existing settlement workers** physically travel to and enter the staffed tower before a nighttime raid. The tower provides shelter for its own operators; those workers may operate the defense while sheltered instead of retreating to a House or the Town Hall. They are not exposed as independently targetable outdoor personnel while inside an intact tower. Other workers continue to use the ordinary distributed shelter rules (Decision 2.3).
+
+A worker must actually reach the tower and be assigned there before it can count as crew. Staffed towers cannot operate from free, remote, duplicated or invisible workers; absent crew means no crew-dependent combat output. Garrison duty remains an economic opportunity cost: a sheltered operator does not simultaneously harvest, haul, produce ammunition or repair buildings. Preserve real positions, occupancy, deterministic movement/recall, day/night phase transitions and replay/checksum identity in the Rust core. Tower damage remains meaningful; this Decision does not determine a specific crew casualty/evacuation rule if the tower itself is destroyed.
+
+This does **not** require crew for existing Arrow or Cannon towers, nor automatically retrofit the first ammunition-consuming precision tower from Decision 4.9 and issue #52. The first *later* staff-dependent tower remains a product choice (Question 4.13).
+
+### Question 4.13 — Which later advanced tower first requires a garrison?
+
+A sheltered crew now has an approved purpose, but its first distinct playable defensive role still needs to be chosen.
+
+- **A — Staffed siege artillery:** a new heavy, crewed area-damage tower effective against clustered raiders, complementing the precision anti-elite/boss tower.
+- **B — Staffed control tower:** a new crewed support defense that slows, suppresses or marks dangerous advancing raiders, creating room for ordinary damage towers.
+- **C — Later precision-tower upgrade:** a further advanced variant or upgrade of the separately introduced precision tower gains a crew requirement, while its original ammo-only implementation remains operable without staff.
+
+Choose a real initial experience rather than requiring all three. Crew assignment UI, specific operator count and ammunition/cost numbers follow the chosen role and are not approved here.
+
+### Decision 4.14 — Staffed siege artillery is the first garrisoned tower
+
+**Answers 4.13.**
+
+Choose **A — Staffed siege artillery**.
+
+The first **later, staff-dependent advanced defense** is a **new heavy area-damage siege artillery tower** that counters **clusters of attacking raiders**. Its wide-impact role deliberately **complements**, rather than replaces or retrofits, the distinct finite-ammunition precision anti-armor/elite/boss tower approved in Decisions 4.5, 4.7 and 4.9 (issue #52). Ordinary Arrow and Cannon towers remain unchanged. This selects one first staffed-tower role, not a required roster of staffed control towers or precision-tower variants.
+
+Operating the siege artillery requires a real crew assigned from the settlement's **existing worker population**, not free or dedicated newly generated soldiers (Decision 4.10). Assigned operators physically reach the tower, enter it before or during the permitted preparation/rally phase, and remain **sheltered while operating during night raids** rather than retreating to an ordinary House or Town Hall (Decisions 2.3 and 4.12). Those same workers cannot simultaneously harvest, haul, manufacture, build, repair or staff another defense; lacking the requisite present crew prevents the tower's crew-dependent firing. Crewing and combat are deterministic Rust/ECS state, with authoritative assignment, movement, phase handling, range/area effects, damage, replay/checksum, projections and visible readiness; no browser-only staffing counters, teleporting operators, second worker economy or new simulation architecture.
+
+Implement the **first player-verifiable siege-artillery slice** after the shared shelter/crew foundations and established precision-tower contrast. The player should construct and assign the new defense in the actual 3D battlefield, observe people enter and operate it through a raid, see meaningful area damage on a grouped enemy wave, and observe the civilian-workforce opportunity cost. If a tower cannot fire, the real reason (uncrewed, ineligible or inactive) must be visible. Keep the existing housing and precision-tower vertical slices independently scoped; do not silently impose siege-crew requirements on them.
+
+This Decision **does not** mandate manufactured ammunition or a new ammunition production chain for siege artillery, a particular crew size, named weapon, area radius, costs, damage thresholds, unlock wave or specific garrison casualty/evacuation consequences upon tower destruction. Use existing `GameRules` to select and validate implementation tuning, with observable acceptance of the selected role and no invented product defaults for otherwise consequential unselected features. ([owner choice A, 2026-10-15; Decision Atlas PR #45](https://github.com/moritzbrantner/raid-defense/pull/45))
+
+## 5. Movement, logistics and fortification
+
+### Decision 5.1 — Efficient worker routes compete with difficult raider routes
+
+Layout decisions must create a tradeoff between short, productive worker paths and long, defensible raider approaches. Resource buildings, defenses and terrain/path features all affect this balance; optimizing one side must not erase the strategic importance of the other. Preserve legal worker access and raider routes.
+
+Potential later construction tools include roads, walls, barricades, gates, bridges, tunnels, mines and traps. These examples are not individually approved as first-release requirements.
+
+### Question 5.2 — How should roads affect raiders?
+
+- **A — Shared speed:** raiders and workers both benefit from roads, making efficient logistics corridors tempting invasion routes.
+- **B — Worker advantage:** workers move faster on roads; raiders may traverse them but receive no speed bonus.
+- **C — Restricted corridors:** worker roads can be made inaccessible to raiders through controlled access.
+
+### Decision 5.4 — Roads speed up workers and raiders
+
+**Answers 5.2.**
+
+Choose **A — Shared speed**.
+
+Roads improve actual traversal speed for **both** settlement workers and raiders. A convenient road network can shorten hauling, construction, repair, exploration and other worker journeys, but it can also let attacking raiders reach valuable resources and escape with stolen goods faster. This deliberate economy-versus-defense tradeoff must be visible in the played scenario rather than merely represented by decorative terrain or a worker-only bonus.
+
+Both sides may travel over ordinary roads, and their route choices should reflect real travel-time advantages when those advantages matter. Roads do not automatically provide raider-proof access or solve the separate choice of gates, barricades and other defensive route structures (Question 5.3). Keep road occupancy, movement effects, authoring/placement, path legality, deterministic navigation, and replay identity in the Rust simulation; speed values and costs remain tunable rules, not browser constants.
+
+### Question 5.3 — Which advanced route-shaping construction should be introduced first?
+
+Walls and barricades, controllable gates, traps and mines, and bridges or tunnels are candidates. Their order and concrete mechanics are open; do not treat this list as a promise to implement them all.
+
+### Decision 5.5 — Controllable gates are the first advanced route-shaping structure
+
+**Answers 5.3.**
+
+Choose **B — Controllable gates** as the first advanced route-shaping feature after roads.
+
+The player can construct gates within the settlement's routes and change them between open and closed states. An open gate permits movement along that route; a closed gate obstructs ordinary passage for both workers and raiders. Opening a shortcut can help workers haul resources, while closing it can redirect raiders along a longer defensive approach. The result must be observable in the actual game, not merely a cosmetic gate model.
+
+The player's gate actions, state transitions, path legality, and agent rerouting belong to the authoritative deterministic Rust simulation. Preserve valid worker logistics, existing movement/route invariants, replay identity, and physical road behavior under Decisions 5.1 and 5.4. Choosing gates first does not approve walls, mines, bridges, tunnels, automatic day/night gate schedules, gate staffing, or any specific gate durability.
+
+A material topology question remains: what happens if closing a gate would eliminate every raider route to the Town Hall (Question 5.6)? Until this is resolved, do not silently override the repository's existing requirement to keep raider routes open.
+
+### Question 5.6 — May a gate close the last raider route?
+
+When closing a gate would block every remaining route from an active raider entrance to the Town Hall, what should happen?
+
+- **A — Reject closure:** the gate stays open and explains why; gates can divert raiders only when a valid alternative route remains.
+- **B — Destructible blockade:** the gate may close completely, but raiders can attack and break through it, reopening a route at a defensive cost.
+- **C — Forceable passage:** raiders can force their way through a closed gate after a delay, so sealing routes trades time instead of requiring structural destruction.
+
+### Decision 5.7 — Gate closure must preserve a raider route
+
+**Answers 5.6.**
+
+Choose **A — Reject closure**.
+
+Closing a controllable gate is legal only when every relevant raider spawn/entry and active raider retains a valid route to the Town Hall. If closing it would seal the last route, the command is rejected, the gate remains open, and the player receives a clear explanation. Gates are therefore tools for redirecting attacks toward defensible routes, not unbreakable ways to shut off a raid.
+
+The same closure validation must preserve the repository's existing required worker/logistics access. The Rust simulation owns the legal-state check and route updates; a rejected command cannot mutate authoritative gate state, movement, replay or checksum identity. Gate state transitions and movement remain deterministic. This Decision does **not** introduce raider attacks on gates, forced passage, special route-breaking behavior or automatic gate schedules.
+
+### Question 5.8 — Can the player operate gates during an active raid?
+
+- **A — Tactical control:** the player may manually open or close gates at any time, including during active raids, subject to route legality.
+- **B — Preparation-only control:** the player sets gate states during the day or rally; states remain fixed while a raid is active, so routing decisions must be planned in advance.
+- **C — Bounded tactical control:** the player may change each gate's state at most once during an active raid. Preparation and rally remain configurable, but a finite in-raid limit prevents indefinitely bouncing raiders back and forth through repeated toggles.
+
+**Steering concern — repeated gate toggles:** Even when every individual gate configuration has a valid raider path (Decision 5.7), an unrestricted series of legal changes can keep sending raiders into opposite routes, preventing them from making progress. A cooldown alone slows the exploit without guaranteeing that it ends. Choose deliberately between tactical flexibility and a definite limit on in-raid rerouting. This remains an unanswered Question; the owner's concern is not an approval of B or C.
+
+### Decision 5.9 — Gate controls lock for active raids
+
+**Answers 5.8.**
+
+Choose **B — Preparation-only control**.
+
+The player may manually open or close a constructed gate during the daytime preparation phase and the pre-raid rally. Once the active raid begins—when the first scheduled raider is due to enter—the gate states are frozen for the **entire** active raid, including gaps between scheduled spawns or moments with no live raiders. The player can adjust them again only after the full raid ends and the next daytime preparation phase begins.
+
+This makes gate routing a deliberate pre-raid defense decision, not a mid-battle action that can be spammed to bounce raiders endlessly between individually valid paths. A gate-control attempt during an active raid is rejected without changing the gate, the authoritative game state, or the accepted replay action log. Do not silently auto-close, auto-open or flip gates at phase transitions; the player's last valid preparation state carries into the raid.
+
+Every allowed closure must continue to preserve valid raider and worker routes (Decision 5.7); closing the final route remains illegal. The Rust simulation owns phase checks, gate state and routing changes, and checksums/replay. Neither forced passage nor breaching nor a per-raid toggle allowance is approved.
+
+## 6. Expansion and frontier exposure
+
+### Decision 6.1 — Expansion trades richer resources for harder defense
+
+Within a scenario, the usable settlement territory gradually expands. New territory exposes additional resource sites and, over time, different resource kinds. Expansion also creates a larger defensive footprint and additional viable directions or fronts for raids, so additional production carries a real protection and logistics cost.
+
+Keep this distinct from Decision 1.4: a completed scenario still starts a fresh settlement in the next scenario. How territory is acquired and how the authoritative grid/map represents expansion remain open.
+
+### Question 6.2 — What unlocks the next territory during a run?
+
+- **A — Player claim:** spend resources to claim an adjacent region during preparation.
+- **B — Exploration:** send workers/scouts to discover and secure a new area.
+- **C — Wave milestone:** surviving specified raids automatically opens additional territory.
+
+### Decision 6.3 — Exploration-driven territorial expansion
+
+**Answers 6.2.**
+
+Choose **B — Exploration**.
+
+During a scenario, expanding the usable settlement territory requires a physical expedition: the player sends workers or scouts to investigate and secure adjacent land. Merely paying for an adjacent tile or surviving a specified wave does not automatically expand the settlement. Exploration must have real travel and exposure consequences, grounded in authoritative unit movement, terrain, and day/night behavior.
+
+Secured territory makes additional resource sites accessible and expands the frontier the player must protect, including credible additional raid approach angles. The gradual risk-versus-reward expansion in Decision 6.1 remains essential. Respect authored scenario identity and deterministic bounded variation (Decision 1.8), replay identity, valid routes, and Rust-owned world state.
+
+This establishes **exploration as the acquisition mechanic** but does not yet decide whether existing workers or specialized scouts undertake expeditions, or what turns discovered land into secured/buildable territory. Those consequential conditions must not be silently selected by implementation.
+
+### Question 6.4 — What secures an explored region?
+
+After an expedition discovers new territory, what is required before the settlement may exploit resources and build there?
+
+- **A — Expedition reaches the frontier:** reaching and surveying the region secures it; the challenge is the journey and ensuing exposure.
+- **B — Establish an outpost:** the player must deliver resources and construct a forward claim outpost before the region becomes usable; the challenge is sustained logistics.
+- **C — Remove hostile control:** the region is secured by defeating or driving off local enemies; the challenge is offensive combat beyond the established base.
+
+### Decision 6.5 — Securing explored territory requires a constructed outpost
+
+**Answers 6.4.**
+
+Choose **B — Establish an outpost**.
+
+Exploration reveals the adjacent frontier, but discovery by itself does not make that territory available for settlement construction or resource exploitation. The player must establish a forward claim outpost there: workers physically deliver construction resources, complete the outpost, and thereby secure the region for use. Both the expedition and the outpost's logistics have real path, time, and exposure consequences. The claim must not complete instantly on a click, on entering the region, or automatically after a wave.
+
+The outpost links new usable land and resources to the settlement while extending the area that must be defended and exposing credible new raid approaches (Decisions 6.1 and 6.3). Reuse the authoritative economy, construction and worker movement principles; preserve valid routes, authored scenario structure, deterministic replay/checksums, and a playable day/night flow.
+
+The specific exploring unit type (workers, scouts or an expedition group), the effect of later outpost destruction, and outpost tuning remain unresolved. Do not infer a new mandatory scout class or arbitrary regional ownership rules from this Decision.
+
+### Question 6.6 — Who performs a frontier expedition?
+
+Once the player chooses an adjacent region to explore, which kind of unit must travel there?
+
+- **A — Existing workers:** send one or more normal workers, temporarily sacrificing resource production and hauling capacity.
+- **B — Dedicated scouts:** recruit specialized non-production scouting units, creating a distinct exploration investment.
+- **C — Organized expedition group:** assemble a group that includes explorers and escort personnel, making safe exploration depend on a managed expedition instead of an individual worker.
+
+### Decision 6.7 — Existing workers undertake frontier expeditions
+
+**Answers 6.6.**
+
+Choose **A — Existing workers**.
+
+A frontier expedition assigns one or more of the settlement's existing physical workers to travel into adjacent territory, rather than requiring a dedicated scouting unit or an organized escort party. Workers assigned to exploration temporarily stop their regular harvesting, transport or construction duties. Their real movement, availability and return create the economic opportunity cost and exposure of expansion.
+
+Exploration does not itself claim land: the player still needs a worker-supplied, completed frontier outpost before the region becomes usable (Decision 6.5). Expeditions participate in the authoritative day/night schedule, recall and deterministic routing; the game must not spawn free scouts, teleport workers to the destination, or secretly run exploration as a passive production timer.
+
+The precise worker-selection control and additional specialist units are not decided here. This Decision requires the existing-worker expedition journey, not a new worker-management system.
+
+### Question 6.8 — What happens when an established outpost is destroyed?
+
+If a completed frontier outpost is later destroyed by raiders, what happens to the territory it secured?
+
+- **A — Lose the claim:** the region becomes unsecured until workers rebuild an outpost, preventing its resources and building sites from being used as ordinary settlement territory.
+- **B — Keep the claim:** territory stays usable once secured; the outpost can be rebuilt for its own functions, but the claim itself is permanent within that run.
+
+Do not infer a claim-loss rule from ordinary building damage. This only becomes blocking when outpost destruction is part of a proposed gameplay slice.
+
+### Decision 6.9 — Destroyed outposts revoke territory claims
+
+**Answers 6.8.**
+
+Choose **A — Lose the claim**.
+
+If raiders destroy an established frontier outpost, its region becomes unsecured. The territory cannot be exploited as ordinary settlement land: access to its resources and eligibility for new construction are suspended until workers physically rebuild a functioning outpost. The earlier discovery remains known, so recovering a lost claim must not require discovering the same region again. Reclaiming uses actual delivered settlement materials and worker effort; it does not happen immediately or for free.
+
+This creates a continuing defensive obligation for expanded territory while preserving meaningful recovery after a failed defense (Decision 1.12). The lost/claimed status and any restored access must be authoritative, deterministic and replay-safe. This Decision does **not** by itself determine what happens to already constructed buildings, inventories or workers caught in the lost region (Question 6.10).
+
+### Question 6.10 — What happens to existing buildings when an outpost claim is lost?
+
+When a region becomes unsecured, what happens to the buildings the player already constructed there?
+
+- **A — Intact but inactive:** their structures and stored contents remain; production, worker jobs and ordinary operation stop until a rebuilt outpost restores the claim.
+- **B — Automatically destroyed:** losing the claim also destroys buildings in that region; rebuilding the outpost is only the beginning of recovery.
+- **C — Isolated survivors:** previously built structures remain and can still operate where physically possible, but new construction and natural-resource access are unavailable until the region is reclaimed.
+
+### Decision 6.11 — Existing frontier buildings remain intact but inactive
+
+**Answers 6.10.**
+
+Choose **A — Intact but inactive**.
+
+When the outpost securing a frontier region is destroyed and the territory becomes unsecured (Decision 6.9), previously constructed buildings in that region remain physically present, including their existing stored contents. They are **not automatically destroyed or emptied** because the claim was lost. Until workers physically rebuild the outpost and the region is reclaimed, the surviving buildings cannot carry out ordinary production or defensive operation, and their worker jobs and stored inventory are unavailable to the settlement's ordinary logistics and spending.
+
+Reclaiming the region restores eligibility for normal operation of surviving buildings and their retained stock; it does not require reconstructing every surviving building. Actual combat damage or a building's own destruction remains consequential. Inactive structures retain their physical footprint for routing and occupancy, and the same deterministic Rust state, snapshots, and replay/checksum rules govern loss and restoration of functionality. Workers must not continue exploiting unsecured territory through stale assignments; their movement and safe day/night handling remain subject to existing worker rules.
+
+This choice aims for **recoverable attrition** (Decision 1.12): defeating the outpost matters, but the player has a meaningful rebuilding path instead of suffering automatic destruction of an entire frontier economy.
+
