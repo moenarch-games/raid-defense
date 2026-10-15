@@ -347,6 +347,21 @@ When closing a gate would block every remaining route from an active raider entr
 - **B — Destructible blockade:** the gate may close completely, but raiders can attack and break through it, reopening a route at a defensive cost.
 - **C — Forceable passage:** raiders can force their way through a closed gate after a delay, so sealing routes trades time instead of requiring structural destruction.
 
+### Decision 5.7 — Gate closure must preserve a raider route
+
+**Answers 5.6.**
+
+Choose **A — Reject closure**.
+
+Closing a controllable gate is legal only when every relevant raider spawn/entry and active raider retains a valid route to the Town Hall. If closing it would seal the last route, the command is rejected, the gate remains open, and the player receives a clear explanation. Gates are therefore tools for redirecting attacks toward defensible routes, not unbreakable ways to shut off a raid.
+
+The same closure validation must preserve the repository's existing required worker/logistics access. The Rust simulation owns the legal-state check and route updates; a rejected command cannot mutate authoritative gate state, movement, replay or checksum identity. Gate state transitions and movement remain deterministic. This Decision does **not** introduce raider attacks on gates, forced passage, special route-breaking behavior or automatic gate schedules.
+
+### Question 5.8 — Can the player operate gates during an active raid?
+
+- **A — Tactical control:** the player may manually open or close gates at any time, including during active raids, subject to route legality.
+- **B — Preparation-only control:** the player sets gate states during the day or rally; states remain fixed while a raid is active, so routing decisions must be planned in advance.
+
 ## 6. Expansion and frontier exposure
 
 ### Decision 6.1 — Expansion trades richer resources for harder defense
