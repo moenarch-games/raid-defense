@@ -299,6 +299,27 @@ Its finite ammunition must be produced with real settlement resources and delive
 
 This Decision settles **tactical specialization**, not a particular weapon name, ammunition recipe, numerical balance, or unlock-wave number. Those must not be turned into new approval blockers absent a material product tradeoff.
 
+### Decision 4.10 — Selected later advanced towers use existing workers as operators
+
+**Answers 4.4.**
+
+Choose **B — Staff selected advanced towers with existing workers**.
+
+At a later stage of the game, some advanced tower types require actual personnel drawn from the settlement's **existing physical worker population** to operate. Staffing is a real allocation decision: while assigned to tower duty, those workers are unavailable for harvesting, hauling, repairs, ammunition production, construction and other civilian jobs. A tower that requires operators must not provide its normal combat capability from free or invisible personnel; assignment and operational readiness must be legible in the played game.
+
+This is a **later advanced-tower mechanic**, not a retrofit of existing Arrow or Cannon towers. It also does not automatically add a crew requirement to the first ammunition-consuming precision tower already specified in Decisions 4.7/4.9 and tracked in issue #52. That tower's currently approved ammunition-and-combat slice remains distinct until a specific staffed-tower roster or progression decision is approved. Dedicated soldiers or a separate recruitment economy are not required by this choice.
+
+Staffing must use Rust-authoritative workers, movement, assignments, eligibility, combat and deterministic replay/checksums; do not build a browser-only staffing counter. **Nighttime staffing versus the existing worker-shelter rule (Decisions 2.1 and 2.3) remains unresolved in Question 4.11**. Do not silently treat towers as shelters or expose workers in raids without a deliberate product decision.
+
+### Question 4.11 — How are assigned tower operators protected during night raids?
+
+Some later towers require existing workers to operate during a raid, while ordinary workers shelter in Houses or Town Hall (Decision 2.3). How should tower crew behave?
+
+- **A — Sheltered tower garrison:** an assigned worker physically reaches and remains inside the staffed tower during the raid; that tower provides protected shelter to its own operators while they operate it.
+- **B — Exposed combat crew:** an assigned worker operates from a vulnerable position at the tower during the raid and can be attacked as personnel, accepting greater risk than ordinary sheltered workers.
+
+Neither alternative permits workers to operate two places at once, free crew creation, or ordinary outdoor economic work during night raids. Which *tower types* first require staffing is still a later progression choice.
+
 ## 5. Movement, logistics and fortification
 
 ### Decision 5.1 — Efficient worker routes compete with difficult raider routes
