@@ -16,26 +16,63 @@ env:
 
 jobs:
   fast:
+    outputs:
+      docs_only: ${{ steps.scope.outputs.docs_only }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      # Keep the fast check present; for Markdown-only PRs its scope result
+      # makes the Rust and dependent browser jobs inapplicable.
+      - name: Classify PR change scope
+        id: scope
+        shell: bash
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          docs_only=false
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" && -n "$PR_BASE" && -n "$PR_HEAD" ]] &&
+            git cat-file -e "$PR_BASE^{commit}" &&
+            git cat-file -e "$PR_HEAD^{commit}" &&
+            git diff --no-renames --name-only -z "$PR_BASE" "$PR_HEAD" > "$RUNNER_TEMP/changed-files";
+          then
+            mapfile -d '' -t files < "$RUNNER_TEMP/changed-files"
+            if (( ${#files[@]} > 0 )); then
+              docs_only=true
+              for file in "${files[@]}"; do
+                case "$file" in
+                  docs/*.md|README.md|AGENTS.md|CLAUDE.md|ROADMAP.md|DESIGN.md|SCENARIO_EXPERIMENTS.md) ;;
+                  *) docs_only=false; break ;;
+                esac
+              done
+            fi
+          fi
+          printf 'docs_only=%s\n' "$docs_only" >> "$GITHUB_OUTPUT"
 
       - name: Install pinned Rust toolchain
+        if: steps.scope.outputs.docs_only != 'true'
         run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
 
       - name: Format Rust workspace
+        if: steps.scope.outputs.docs_only != 'true'
         run: cargo fmt --all -- --check
 
       - name: Lint Rust workspace
+        if: steps.scope.outputs.docs_only != 'true'
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Test Rust workspace
+        if: steps.scope.outputs.docs_only != 'true'
         run: cargo test --all-targets
 
   integration:
     needs: fast
+    if: needs.fast.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

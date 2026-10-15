@@ -99,6 +99,7 @@
 ## Validation
 
 - Preserve the hosted layer order: fast -> integration -> workflow -> e2e. Do not skip a failed required layer.
+- A verified Markdown-only pull request may finish at the `fast` change-scope check. Missing/empty comparisons and non-documentation paths use all four tiers, as do main pushes and manual runs. Renames inspect both source and destination paths; a failing required code check is never bypassed.
 - Keep cheap deterministic core checks ahead of browser or hosted acceptance.
 - GitHub Pages is the primary integrated browser acceptance surface after merge.
 - Do not treat missing, cancelled, or unavailable evidence as green.
