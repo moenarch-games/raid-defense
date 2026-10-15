@@ -365,6 +365,18 @@ The same closure validation must preserve the repository's existing required wor
 
 **Steering concern — repeated gate toggles:** Even when every individual gate configuration has a valid raider path (Decision 5.7), an unrestricted series of legal changes can keep sending raiders into opposite routes, preventing them from making progress. A cooldown alone slows the exploit without guaranteeing that it ends. Choose deliberately between tactical flexibility and a definite limit on in-raid rerouting. This remains an unanswered Question; the owner's concern is not an approval of B or C.
 
+### Decision 5.9 — Gate controls lock for active raids
+
+**Answers 5.8.**
+
+Choose **B — Preparation-only control**.
+
+The player may manually open or close a constructed gate during the daytime preparation phase and the pre-raid rally. Once the active raid begins—when the first scheduled raider is due to enter—the gate states are frozen for the **entire** active raid, including gaps between scheduled spawns or moments with no live raiders. The player can adjust them again only after the full raid ends and the next daytime preparation phase begins.
+
+This makes gate routing a deliberate pre-raid defense decision, not a mid-battle action that can be spammed to bounce raiders endlessly between individually valid paths. A gate-control attempt during an active raid is rejected without changing the gate, the authoritative game state, or the accepted replay action log. Do not silently auto-close, auto-open or flip gates at phase transitions; the player's last valid preparation state carries into the raid.
+
+Every allowed closure must continue to preserve valid raider and worker routes (Decision 5.7); closing the final route remains illegal. The Rust simulation owns phase checks, gate state and routing changes, and checksums/replay. Neither forced passage nor breaching nor a per-raid toggle allowance is approved.
+
 ## 6. Expansion and frontier exposure
 
 ### Decision 6.1 — Expansion trades richer resources for harder defense
