@@ -327,6 +327,26 @@ Both sides may travel over ordinary roads, and their route choices should reflec
 
 Walls and barricades, controllable gates, traps and mines, and bridges or tunnels are candidates. Their order and concrete mechanics are open; do not treat this list as a promise to implement them all.
 
+### Decision 5.5 — Controllable gates are the first advanced route-shaping structure
+
+**Answers 5.3.**
+
+Choose **B — Controllable gates** as the first advanced route-shaping feature after roads.
+
+The player can construct gates within the settlement's routes and change them between open and closed states. An open gate permits movement along that route; a closed gate obstructs ordinary passage for both workers and raiders. Opening a shortcut can help workers haul resources, while closing it can redirect raiders along a longer defensive approach. The result must be observable in the actual game, not merely a cosmetic gate model.
+
+The player's gate actions, state transitions, path legality, and agent rerouting belong to the authoritative deterministic Rust simulation. Preserve valid worker logistics, existing movement/route invariants, replay identity, and physical road behavior under Decisions 5.1 and 5.4. Choosing gates first does not approve walls, mines, bridges, tunnels, automatic day/night gate schedules, gate staffing, or any specific gate durability.
+
+A material topology question remains: what happens if closing a gate would eliminate every raider route to the Town Hall (Question 5.6)? Until this is resolved, do not silently override the repository's existing requirement to keep raider routes open.
+
+### Question 5.6 — May a gate close the last raider route?
+
+When closing a gate would block every remaining route from an active raider entrance to the Town Hall, what should happen?
+
+- **A — Reject closure:** the gate stays open and explains why; gates can divert raiders only when a valid alternative route remains.
+- **B — Destructible blockade:** the gate may close completely, but raiders can attack and break through it, reopening a route at a defensive cost.
+- **C — Forceable passage:** raiders can force their way through a closed gate after a delay, so sealing routes trades time instead of requiring structural destruction.
+
 ## 6. Expansion and frontier exposure
 
 ### Decision 6.1 — Expansion trades richer resources for harder defense
