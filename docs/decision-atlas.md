@@ -313,6 +313,16 @@ Potential later construction tools include roads, walls, barricades, gates, brid
 - **B — Worker advantage:** workers move faster on roads; raiders may traverse them but receive no speed bonus.
 - **C — Restricted corridors:** worker roads can be made inaccessible to raiders through controlled access.
 
+### Decision 5.4 — Roads speed up workers and raiders
+
+**Answers 5.2.**
+
+Choose **A — Shared speed**.
+
+Roads improve actual traversal speed for **both** settlement workers and raiders. A convenient road network can shorten hauling, construction, repair, exploration and other worker journeys, but it can also let attacking raiders reach valuable resources and escape with stolen goods faster. This deliberate economy-versus-defense tradeoff must be visible in the played scenario rather than merely represented by decorative terrain or a worker-only bonus.
+
+Both sides may travel over ordinary roads, and their route choices should reflect real travel-time advantages when those advantages matter. Roads do not automatically provide raider-proof access or solve the separate choice of gates, barricades and other defensive route structures (Question 5.3). Keep road occupancy, movement effects, authoring/placement, path legality, deterministic navigation, and replay identity in the Rust simulation; speed values and costs remain tunable rules, not browser constants.
+
 ### Question 5.3 — Which advanced route-shaping construction should be introduced first?
 
 Walls and barricades, controllable gates, traps and mines, and bridges or tunnels are candidates. Their order and concrete mechanics are open; do not treat this list as a promise to implement them all.
