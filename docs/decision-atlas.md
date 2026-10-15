@@ -320,6 +320,28 @@ Some later towers require existing workers to operate during a raid, while ordin
 
 Neither alternative permits workers to operate two places at once, free crew creation, or ordinary outdoor economic work during night raids. Which *tower types* first require staffing is still a later progression choice.
 
+### Decision 4.12 — Crewed towers shelter their assigned operators
+
+**Answers 4.11.**
+
+Choose **A — Sheltered tower garrison**.
+
+For selected *later* advanced towers that require staff (Decision 4.10), assigned **existing settlement workers** physically travel to and enter the staffed tower before a nighttime raid. The tower provides shelter for its own operators; those workers may operate the defense while sheltered instead of retreating to a House or the Town Hall. They are not exposed as independently targetable outdoor personnel while inside an intact tower. Other workers continue to use the ordinary distributed shelter rules (Decision 2.3).
+
+A worker must actually reach the tower and be assigned there before it can count as crew. Staffed towers cannot operate from free, remote, duplicated or invisible workers; absent crew means no crew-dependent combat output. Garrison duty remains an economic opportunity cost: a sheltered operator does not simultaneously harvest, haul, produce ammunition or repair buildings. Preserve real positions, occupancy, deterministic movement/recall, day/night phase transitions and replay/checksum identity in the Rust core. Tower damage remains meaningful; this Decision does not determine a specific crew casualty/evacuation rule if the tower itself is destroyed.
+
+This does **not** require crew for existing Arrow or Cannon towers, nor automatically retrofit the first ammunition-consuming precision tower from Decision 4.9 and issue #52. The first *later* staff-dependent tower remains a product choice (Question 4.13).
+
+### Question 4.13 — Which later advanced tower first requires a garrison?
+
+A sheltered crew now has an approved purpose, but its first distinct playable defensive role still needs to be chosen.
+
+- **A — Staffed siege artillery:** a new heavy, crewed area-damage tower effective against clustered raiders, complementing the precision anti-elite/boss tower.
+- **B — Staffed control tower:** a new crewed support defense that slows, suppresses or marks dangerous advancing raiders, creating room for ordinary damage towers.
+- **C — Later precision-tower upgrade:** a further advanced variant or upgrade of the separately introduced precision tower gains a crew requirement, while its original ammo-only implementation remains operable without staff.
+
+Choose a real initial experience rather than requiring all three. Crew assignment UI, specific operator count and ammunition/cost numbers follow the chosen role and are not approved here.
+
 ## 5. Movement, logistics and fortification
 
 ### Decision 5.1 — Efficient worker routes compete with difficult raider routes
