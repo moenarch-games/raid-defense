@@ -361,6 +361,9 @@ The same closure validation must preserve the repository's existing required wor
 
 - **A — Tactical control:** the player may manually open or close gates at any time, including during active raids, subject to route legality.
 - **B — Preparation-only control:** the player sets gate states during the day or rally; states remain fixed while a raid is active, so routing decisions must be planned in advance.
+- **C — Bounded tactical control:** the player may change each gate's state at most once during an active raid. Preparation and rally remain configurable, but a finite in-raid limit prevents indefinitely bouncing raiders back and forth through repeated toggles.
+
+**Steering concern — repeated gate toggles:** Even when every individual gate configuration has a valid raider path (Decision 5.7), an unrestricted series of legal changes can keep sending raiders into opposite routes, preventing them from making progress. A cooldown alone slows the exploit without guaranteeing that it ends. Choose deliberately between tactical flexibility and a definite limit on in-raid rerouting. This remains an unanswered Question; the owner's concern is not an approval of B or C.
 
 ## 6. Expansion and frontier exposure
 
