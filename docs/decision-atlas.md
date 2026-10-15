@@ -342,6 +342,20 @@ A sheltered crew now has an approved purpose, but its first distinct playable de
 
 Choose a real initial experience rather than requiring all three. Crew assignment UI, specific operator count and ammunition/cost numbers follow the chosen role and are not approved here.
 
+### Decision 4.14 — Staffed siege artillery is the first garrisoned tower
+
+**Answers 4.13.**
+
+Choose **A — Staffed siege artillery**.
+
+The first **later, staff-dependent advanced defense** is a **new heavy area-damage siege artillery tower** that counters **clusters of attacking raiders**. Its wide-impact role deliberately **complements**, rather than replaces or retrofits, the distinct finite-ammunition precision anti-armor/elite/boss tower approved in Decisions 4.5, 4.7 and 4.9 (issue #52). Ordinary Arrow and Cannon towers remain unchanged. This selects one first staffed-tower role, not a required roster of staffed control towers or precision-tower variants.
+
+Operating the siege artillery requires a real crew assigned from the settlement's **existing worker population**, not free or dedicated newly generated soldiers (Decision 4.10). Assigned operators physically reach the tower, enter it before or during the permitted preparation/rally phase, and remain **sheltered while operating during night raids** rather than retreating to an ordinary House or Town Hall (Decisions 2.3 and 4.12). Those same workers cannot simultaneously harvest, haul, manufacture, build, repair or staff another defense; lacking the requisite present crew prevents the tower's crew-dependent firing. Crewing and combat are deterministic Rust/ECS state, with authoritative assignment, movement, phase handling, range/area effects, damage, replay/checksum, projections and visible readiness; no browser-only staffing counters, teleporting operators, second worker economy or new simulation architecture.
+
+Implement the **first player-verifiable siege-artillery slice** after the shared shelter/crew foundations and established precision-tower contrast. The player should construct and assign the new defense in the actual 3D battlefield, observe people enter and operate it through a raid, see meaningful area damage on a grouped enemy wave, and observe the civilian-workforce opportunity cost. If a tower cannot fire, the real reason (uncrewed, ineligible or inactive) must be visible. Keep the existing housing and precision-tower vertical slices independently scoped; do not silently impose siege-crew requirements on them.
+
+This Decision **does not** mandate manufactured ammunition or a new ammunition production chain for siege artillery, a particular crew size, named weapon, area radius, costs, damage thresholds, unlock wave or specific garrison casualty/evacuation consequences upon tower destruction. Use existing `GameRules` to select and validate implementation tuning, with observable acceptance of the selected role and no invented product defaults for otherwise consequential unselected features. ([owner choice A, 2026-10-15; Decision Atlas PR #45](https://github.com/moritzbrantner/raid-defense/pull/45))
+
 ## 5. Movement, logistics and fortification
 
 ### Decision 5.1 — Efficient worker routes compete with difficult raider routes
