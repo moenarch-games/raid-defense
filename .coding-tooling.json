@@ -2,10 +2,22 @@
   "schemaVersion": 1,
   "profile": "repository-foundation-v1",
   "tiers": {
-    "fast": ["format:check", "lint", "build", "test:unit"],
-    "integration": ["test:integration"],
-    "e2e": ["test:e2e"],
-    "performance": ["benchmark:smoke", "performance:work"]
+    "fast": [
+      "format:check",
+      "lint",
+      "build",
+      "test:unit"
+    ],
+    "integration": [
+      "test:integration"
+    ],
+    "e2e": [
+      "test:e2e"
+    ],
+    "performance": [
+      "benchmark:smoke",
+      "performance:work"
+    ]
   },
   "requiredCapabilities": [
     "format:check",
@@ -15,15 +27,26 @@
     "benchmark:smoke",
     "performance:work"
   ],
-  "optionalCapabilities": ["test:integration", "test:e2e"],
+  "optionalCapabilities": [
+    "test:integration",
+    "test:e2e"
+  ],
   "capabilityCommands": {
     ".": {
-      "benchmark:smoke": ["bash", "scripts/performance-smoke.sh"],
-      "performance:work": ["bash", "scripts/performance-work.sh"]
+      "benchmark:smoke": [
+        "bash",
+        "scripts/performance-smoke.sh"
+      ],
+      "performance:work": [
+        "bash",
+        "scripts/performance-work.sh"
+      ]
     }
   },
   "merge": {
     "authority": "hosted",
-    "requiredChecks": ["fast", "integration", "workflow", "e2e"]
+    "requiredChecks": [
+      "merge-ready"
+    ]
   }
 }
