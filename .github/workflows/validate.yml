@@ -156,3 +156,17 @@ jobs:
       - name: Run browser acceptance
         working-directory: visualization
         run: bun run e2e
+
+  merge-ready:
+    name: merge-ready
+    if: ${{ always() }}
+    needs: [fast, integration, workflow, e2e]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: moritzbrantner/reusable-workflows/.github/actions/merge-ready@b0f25f241d76af2584dfc9e375084ff5c5cb97da
+        with:
+          needs: ${{ toJSON(needs) }}
+          required: '["fast","integration","workflow","e2e"]'
+          allow-skipped: ${{ needs.fast.outputs.docs_only == 'true' && '["integration","workflow","e2e"]' || '[]' }}
