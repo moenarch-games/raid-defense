@@ -17,7 +17,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@moritzbrantner/i18n": "^0.1.0",
+    "@moritzbrantner/i18n": "github:moritzbrantner/platform-packages#b6dc07a380cda0f06048cba9cb117e75c669240a",
     "@moritzbrantner/settings-browser": "github:moritzbrantner/settings#007b4405d2aaa5d765eea87abd813c8dd1c3e1be",
     "@moritzbrantner/ui": "https://registry.npmjs.org/@moritzbrantner/ui/-/ui-1.1.0.tgz",
     "@react-three/drei": "^10.7.7",

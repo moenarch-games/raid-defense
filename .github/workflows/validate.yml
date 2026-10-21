@@ -10,9 +10,6 @@ permissions:
   contents: read
   packages: read
 
-env:
-  GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
-  NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
 
 jobs:
   fast:

@@ -5,7 +5,7 @@
     "": {
       "name": "raid-defense-visualization",
       "dependencies": {
-        "@moritzbrantner/i18n": "^0.1.0",
+        "@moritzbrantner/i18n": "github:moritzbrantner/platform-packages#b6dc07a380cda0f06048cba9cb117e75c669240a",
         "@moritzbrantner/settings-browser": "github:moritzbrantner/settings#007b4405d2aaa5d765eea87abd813c8dd1c3e1be",
         "@moritzbrantner/ui": "https://registry.npmjs.org/@moritzbrantner/ui/-/ui-1.1.0.tgz",
         "@react-three/drei": "^10.7.7",
@@ -151,7 +151,7 @@
 
     "@monogrid/gainmap-js": ["@monogrid/gainmap-js@3.4.0", "", { "dependencies": { "promise-worker-transferable": "^1.0.4" }, "peerDependencies": { "three": ">= 0.159.0" } }, "sha512-2Z0FATFHaoYJ8b+Y4y4Hgfn3FRFwuU5zRrk+9dFWp4uGAdHGqVEdP7HP+gLA3X469KXHmfupJaUbKo1b/aDKIg=="],
 
-    "@moritzbrantner/i18n": ["@moritzbrantner/i18n@0.1.0", "https://npm.pkg.github.com/download/@moritzbrantner/i18n/0.1.0/e8e74dd458b8ffb5b875ff582684aa2083ee9ece", { "dependencies": { "i18next": "^26.4.2", "react-i18next": "^17.0.14" }, "peerDependencies": { "react": "^19.0.0" } }, "sha512-xp2RPAwuKFarl5/N2VxK0rVqxkO7nitXLIvQ6A8bRvGuH4cUrlnlrgLoEDcDxuObMxAaC3iANadPAq9UzIBZpg=="],
+    "@moritzbrantner/i18n": ["@moritzbrantner/i18n@github:moritzbrantner/platform-packages#b6dc07a", { "dependencies": { "i18next": "^26.4.2", "react-i18next": "^17.0.14" }, "peerDependencies": { "react": "^19.0.0" } }, "moritzbrantner-platform-packages-b6dc07a", "sha512-rIWNWMZ680MYY/KBXjihvznVUthosmzmw8zf9H+FPRX7ZgCmFAK/+Uy3pBu/U8jYMXmqanedz6gFNStWsvZNVQ=="],
 
     "@moritzbrantner/settings-browser": ["@moritzbrantner/settings-browser@github:moritzbrantner/settings#007b440", { "peerDependencies": { "@moritzbrantner/ui": ">=1.1.0", "react": ">=19.0.0" }, "optionalPeers": ["@moritzbrantner/ui", "react"] }, "moritzbrantner-settings-007b440", "sha512-Pyn77Pk/Peag3/Jp7ZkVVMtGQY0IMtpAw+8nTj02z5TSJgH3CA+47tKWY5ZjCLZlODghculTi15xl4nGxQS4MA=="],
 
