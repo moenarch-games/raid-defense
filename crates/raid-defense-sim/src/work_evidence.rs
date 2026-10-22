@@ -23,49 +23,58 @@ use super::{Policy, simulate};
 
 pub(crate) const SUITE: &str = "raid-defense/headless-simulation-v1";
 const SEED: u64 = 0x42;
+/// Ticks measured by `construction_hauling`, after the assignment tick.
+const HAUL_WINDOW_TICKS: u32 = 8;
 
 /// One reported counter value of a sample.
 type Metric = (&'static str, u64);
 
 struct Operation {
     id: &'static str,
-    dimension: &'static str,
-    points: &'static [u64],
-    measure: fn(u64) -> Vec<Metric>,
+    /// Dimension names; each scale point lists one value per dimension.
+    dimensions: &'static [&'static str],
+    points: &'static [&'static [u64]],
+    measure: fn(&[u64]) -> Vec<Metric>,
 }
 
 /// The declared operations and their scale points. Keep in sync with the
 /// `operations` block of `.performance/contract.json`.
-const OPERATIONS: [Operation; 5] = [
+const OPERATIONS: [Operation; 6] = [
     Operation {
         id: "raid-tick-navigation",
-        dimension: "raiders",
-        points: &[8, 16, 32],
-        measure: raid_tick_navigation,
+        dimensions: &["raiders"],
+        points: &[&[8], &[16], &[32]],
+        measure: |point| raid_tick_navigation(point[0]),
     },
     Operation {
         id: "tower-targeting",
-        dimension: "raiders",
-        points: &[4, 10, 16],
-        measure: tower_targeting,
+        dimensions: &["raiders"],
+        points: &[&[4], &[10], &[16]],
+        measure: |point| tower_targeting(point[0]),
     },
     Operation {
         id: "worker-logistics",
-        dimension: "workers",
-        points: &[2, 12],
-        measure: worker_logistics,
+        dimensions: &["workers"],
+        points: &[&[2], &[12]],
+        measure: |point| worker_logistics(point[0]),
     },
     Operation {
         id: "idle-workers-exhausted-stock",
-        dimension: "workers",
-        points: &[2, 4, 8, 12],
-        measure: idle_workers_exhausted_stock,
+        dimensions: &["workers"],
+        points: &[&[2], &[4], &[8], &[12]],
+        measure: |point| idle_workers_exhausted_stock(point[0]),
+    },
+    Operation {
+        id: "construction-hauling",
+        dimensions: &["haulers", "storages"],
+        points: &[&[2, 1], &[8, 1], &[2, 4], &[8, 4]],
+        measure: |point| construction_hauling(point[0], point[1]),
     },
     Operation {
         id: "policy-journey",
-        dimension: "ticks",
-        points: &[1_000, 2_000, 4_000],
-        measure: policy_journey,
+        dimensions: &["ticks"],
+        points: &[&[1_000], &[2_000], &[4_000]],
+        measure: |point| policy_journey(point[0]),
     },
 ];
 
@@ -97,13 +106,17 @@ pub(crate) fn render(contract_sha256: &str) -> Result<String, String> {
             if point_index > 0 {
                 out.push(',');
             }
-            write!(
-                out,
-                "{{\"dimensions\":{{\"{}\":{point}}},\"metrics\":{{",
-                operation.dimension
-            )
-            .expect("writing to a String cannot fail");
-            for (metric_index, (name, value)) in (operation.measure)(*point).iter().enumerate() {
+            out.push_str("{\"dimensions\":{");
+            for (dimension_index, (name, value)) in
+                operation.dimensions.iter().zip(point.iter()).enumerate()
+            {
+                if dimension_index > 0 {
+                    out.push(',');
+                }
+                write!(out, "\"{name}\":{value}").expect("writing to a String cannot fail");
+            }
+            out.push_str("},\"metrics\":{");
+            for (metric_index, (name, value)) in (operation.measure)(point).iter().enumerate() {
                 if metric_index > 0 {
                     out.push(',');
                 }
@@ -324,6 +337,96 @@ fn idle_workers_exhausted_stock(workers: u64) -> Vec<Metric> {
     for _ in 0..600 {
         state.advance_tick();
     }
+    let work = delta(state.work_counters(), before);
+    vec![(
+        "logistics_candidate_searches",
+        work.logistics_candidate_searches,
+    )]
+}
+
+/// Candidate interior cells in a stable order: rows from `rows`, columns left
+/// to right. Placement validation decides which are actually buildable.
+fn interior_cells(rows: impl Iterator<Item = i16>) -> Vec<Cell> {
+    rows.flat_map(|z| (1..GRID_WIDTH - 1).map(move |x| Cell::new(x, z)))
+        .collect()
+}
+
+/// `haulers` people haul for open tower construction sites in the north
+/// while `storages` settlement storage nodes exist (the Town Hall plus empty
+/// Storage Houses in the south, farther from every site than the Town Hall).
+/// Measured over the window after every hauler was assigned and before any
+/// returns idle, so the only logistics work is construction-source selection.
+fn construction_hauling(haulers: u64, storages: u64) -> Vec<Metric> {
+    const SITES: usize = 6;
+    let haulers = count(haulers);
+    let mut rules = STANDARD_RULES;
+    rules.cycle.automatic_raids = false;
+    rules.economy.starting_wood = rules.economy.town_wood_capacity;
+    rules.population.base_capacity = haulers;
+    rules.population.starting_people = haulers;
+    rules
+        .validate()
+        .expect("construction fixture rules must validate");
+    let mut state = GameState::with_rules(SEED, rules);
+
+    let houses = usize::try_from(storages - 1).expect("storage count fits usize");
+    let south = interior_cells((GRID_HEIGHT * 3 / 4..GRID_HEIGHT - 1).rev());
+    let mut placed = 0;
+    for cell in south {
+        if placed == houses {
+            break;
+        }
+        if state
+            .apply(Command::PlaceStorageHouse {
+                x: cell.x,
+                z: cell.z,
+            })
+            .is_ok()
+        {
+            placed += 1;
+        }
+    }
+    assert_eq!(placed, houses, "fixture storage houses must be accepted");
+
+    let north = interior_cells(2..GRID_HEIGHT / 4);
+    let mut sites = 0;
+    for cell in north.into_iter().step_by(3) {
+        if sites == SITES {
+            break;
+        }
+        if state
+            .apply(Command::PlaceTower {
+                x: cell.x,
+                z: cell.z,
+                archetype: TowerArchetype::Arrow,
+            })
+            .is_ok()
+        {
+            sites += 1;
+        }
+    }
+    assert_eq!(sites, SITES, "fixture construction sites must be accepted");
+
+    let hauling = |state: &GameState| {
+        state.snapshot().entities.iter().all(|entity| {
+            entity.person_state.is_none_or(|person| {
+                matches!(
+                    person,
+                    PersonState::ToConstructionStorage | PersonState::ToConstructionSite
+                )
+            })
+        })
+    };
+    state.advance_tick();
+    assert!(hauling(&state), "fixture: every person hauls for a site");
+    let before = state.work_counters();
+    for _ in 0..HAUL_WINDOW_TICKS {
+        state.advance_tick();
+    }
+    assert!(
+        hauling(&state),
+        "fixture: no hauler returns idle in the window"
+    );
     let work = delta(state.work_counters(), before);
     vec![(
         "logistics_candidate_searches",

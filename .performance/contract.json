@@ -329,6 +329,54 @@
       ]
     },
     {
+      "id": "construction-hauling",
+      "description": "N workers haul wood for six open arrow-tower construction sites in the north while S settlement storage nodes exist (the stocked Town Hall plus S-1 empty Storage Houses in the south, farther from every site). Measured over the 8 ticks after every worker was assigned and before any returns idle, so the only logistics work is construction-source selection while hauling.",
+      "dimensions": {
+        "haulers": {
+          "description": "people in the settlement, all hauling for construction sites"
+        },
+        "storages": {
+          "description": "settlement storage nodes (Town Hall plus Storage Houses)"
+        }
+      },
+      "scalePoints": [
+        {
+          "haulers": 2,
+          "storages": 1
+        },
+        {
+          "haulers": 8,
+          "storages": 1
+        },
+        {
+          "haulers": 2,
+          "storages": 4
+        },
+        {
+          "haulers": 8,
+          "storages": 4
+        }
+      ],
+      "metrics": [
+        {
+          "name": "logistics_candidate_searches",
+          "unit": "candidates",
+          "signal": "operation-count",
+          "growth": [
+            {
+              "dimension": "haulers",
+              "bound": "linear"
+            },
+            {
+              "dimension": "storages",
+              "bound": "constant"
+            }
+          ],
+          "notes": "A hauler re-checks its construction source on every movement step toward it. The retained per-site source ranking stops at the first stocked, reachable node, so the work per step does not grow with the storage count; re-scanning every storage node each step would violate the constant bound."
+        }
+      ]
+    },
+    {
       "id": "policy-journey",
       "description": "Run the balanced headless policy (seed 41) through economy growth, construction and waves for N ticks.",
       "dimensions": {

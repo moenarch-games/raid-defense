@@ -269,11 +269,26 @@ impl GameState {
         site: EntityId,
         worker_start: Cell,
     ) -> Option<EntityId> {
-        self.nearest_storage_with_wood_for_site_among(
-            site,
-            worker_start,
-            &self.settlement_storage_ids(),
-        )
+        // Walk the retained per-site ranking and stop at the first stocked node
+        // the worker can reach. This picks the same node as a full scan
+        // (minimum site distance, then entity id) while a hauler re-checking
+        // its source each step examines only the nodes ahead of its choice.
+        self.construction_source_ranking(site)
+            .iter()
+            .copied()
+            .find(|&entity| {
+                self.count_work(|work| work.logistics_candidate_searches += 1);
+                self.storage
+                    .get(entity_key(entity))
+                    .is_some_and(|storage| storage.wood > 0)
+                    && self
+                        .path_distance_to_any(
+                            worker_start,
+                            &self.storage_goal_cells(entity, None),
+                            None,
+                        )
+                        .is_some()
+            })
     }
 
     /// Like [`Self::nearest_storage_with_wood_for_site`], but only examines
@@ -400,7 +415,11 @@ impl GameState {
             .collect()
     }
 
-    fn distance_between_goal_sets(&self, starts: &[Cell], goals: &[Cell]) -> Option<u16> {
+    pub(super) fn distance_between_goal_sets(
+        &self,
+        starts: &[Cell],
+        goals: &[Cell],
+    ) -> Option<u16> {
         starts
             .iter()
             .filter_map(|start| self.path_distance_to_any(*start, goals, None))

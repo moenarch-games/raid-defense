@@ -52,7 +52,7 @@ The roadmap is vertical: every milestone should leave GitHub Pages more playable
 ## E. ECS scale and performance
 
 - [ ] Add projectile/effect pools as entity populations grow.
-- [x] Measure targeting, logistics, and movement system costs with representative large waves and worker populations. Deterministic work counters and scaling contracts cover navigation, targeting and policy validation (#38). A per-tick logistics candidate index bounds idle-worker searches by assignments, and the stable counters are declared as coding-tooling growth and budget operations with a `performance:work` collector (#42).
+- [x] Measure targeting, logistics, and movement system costs with representative large waves and worker populations. Deterministic work counters and scaling contracts cover navigation, targeting and policy validation (#38). A per-tick logistics candidate index bounds idle-worker searches by assignments, and the stable counters are declared as coding-tooling growth and budget operations with a `performance:work` collector (#42). Construction haulers re-check their source against a retained per-site storage ranking, declared constant in the storage count (#44).
 - [x] Introduce spatial-query acceleration only when measurements justify it: tower targeting uses a per-tick raider cell index and navigation fields are retained per goal set (#38).
 - [ ] Keep deterministic replay/checksum coverage across component lifecycle and system ordering.
 - [ ] Use ECS Lab to compare storage/system strategies, then promote only reusable low-level primitives through `rust-kernels`.
