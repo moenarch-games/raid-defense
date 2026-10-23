@@ -12,7 +12,10 @@
 //! from-scratch breadth-first search the simulation used before (same neighbor
 //! order, same tie-breaking).
 
-use std::cell::{Cell as CounterCell, RefCell};
+use std::{
+    cell::{Cell as CounterCell, RefCell},
+    rc::Rc,
+};
 
 use super::*;
 
@@ -46,6 +49,11 @@ struct NavigationCache {
     /// Fields for the real topology plus one hypothetical blocked cell (used by
     /// placement validation), keyed by that cell and the goal-cell set.
     probe: Option<(Cell, FieldMap)>,
+    /// Construction site -> settlement storage nodes that can reach the site,
+    /// ordered by (storage-to-site distance, entity id). Settlement storage
+    /// only appears through building insertion, so the ranking is a pure
+    /// function of the topology and is retained with the fields.
+    site_sources: BTreeMap<EntityId, Rc<[EntityId]>>,
 }
 
 /// Non-authoritative per-state instrumentation and retained navigation.
@@ -184,6 +192,47 @@ impl GameState {
         let navigation = self.instrumentation.navigation.get_mut();
         navigation.fields.clear();
         navigation.probe = None;
+        navigation.site_sources.clear();
+    }
+
+    /// Settlement storage nodes ranked as construction sources for `site`
+    /// under the current topology, building the ranking on first use. Building
+    /// it examines every settlement storage node once.
+    pub(super) fn construction_source_ranking(&self, site: EntityId) -> Rc<[EntityId]> {
+        if let Some(ranking) = self
+            .instrumentation
+            .navigation
+            .borrow()
+            .site_sources
+            .get(&site)
+        {
+            return Rc::clone(ranking);
+        }
+        let ranking: Rc<[EntityId]> = self.buildings.get(entity_key(site)).map_or_else(
+            || Rc::from([]),
+            |building| {
+                let site_goals = self.adjacent_walkable_cells(building.cell, None);
+                let mut ranked = self
+                    .settlement_storage_ids()
+                    .into_iter()
+                    .filter_map(|entity| {
+                        self.count_work(|work| work.logistics_candidate_searches += 1);
+                        let storage_goals = self.storage_goal_cells(entity, None);
+                        let distance =
+                            self.distance_between_goal_sets(&storage_goals, &site_goals)?;
+                        Some((distance, entity))
+                    })
+                    .collect::<Vec<_>>();
+                ranked.sort_unstable();
+                ranked.into_iter().map(|(_, entity)| entity).collect()
+            },
+        );
+        self.instrumentation
+            .navigation
+            .borrow_mut()
+            .site_sources
+            .insert(site, Rc::clone(&ranking));
+        ranking
     }
 
     /// Run `query` against the retained distance field for `goals` under the

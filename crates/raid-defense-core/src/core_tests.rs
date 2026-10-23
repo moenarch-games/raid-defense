@@ -322,6 +322,95 @@ mod tests {
     }
 
     #[test]
+    fn retained_construction_source_ranking_matches_a_full_scan() {
+        let mut state = GameState::new(0x5eed);
+        let mut storages = Vec::new();
+        for cell in [
+            Cell::new(2, GRID_HEIGHT / 2),
+            Cell::new(GRID_WIDTH - 3, GRID_HEIGHT / 2),
+            Cell::new(GRID_WIDTH / 2, 2),
+        ] {
+            if state
+                .apply(Command::PlaceStorageHouse {
+                    x: cell.x,
+                    z: cell.z,
+                })
+                .is_ok()
+            {
+                storages.push(building_entity_at(&state, BuildingKind::StorageHouse, cell));
+            }
+        }
+        assert!(storages.len() >= 2, "fixture needs storage houses");
+        let mut sites = Vec::new();
+        state.store_wood_at(TOWN_ENTITY, u32::MAX);
+        for anchor in [
+            Cell::new(3, 3),
+            Cell::new(GRID_WIDTH - 4, GRID_HEIGHT - 4),
+            Cell::new(GRID_WIDTH / 2 + 2, 3),
+        ] {
+            let mut cells = (1..GRID_HEIGHT - 1)
+                .flat_map(|z| (1..GRID_WIDTH - 1).map(move |x| Cell::new(x, z)))
+                .collect::<Vec<_>>();
+            cells.sort_by_key(|cell| {
+                ((cell.x - anchor.x).abs() + (cell.z - anchor.z).abs(), *cell)
+            });
+            let placed = cells.into_iter().find(|cell| {
+                state
+                    .apply(Command::PlaceTower {
+                        x: cell.x,
+                        z: cell.z,
+                        archetype: TowerArchetype::Arrow,
+                    })
+                    .is_ok()
+            });
+            if let Some(cell) = placed {
+                sites.push(building_entity_at(&state, BuildingKind::Tower, cell));
+            }
+        }
+        assert!(sites.len() >= 2, "fixture needs construction sites");
+        let starts = [town_center(), Cell::new(1, 1), Cell::new(GRID_WIDTH - 2, 5)];
+
+        let check = |state: &GameState| {
+            for &site in &sites {
+                for &start in &starts {
+                    assert_eq!(
+                        state.nearest_storage_with_wood_for_site(site, start),
+                        state.nearest_storage_with_wood_for_site_among(
+                            site,
+                            start,
+                            &state.settlement_storage_ids()
+                        ),
+                        "site {site} from {start:?}"
+                    );
+                }
+            }
+        };
+        check(&state);
+        for &storage in &storages {
+            let moved = state.take_wood_at(TOWN_ENTITY, 10);
+            state.store_wood_at(storage, moved);
+            check(&state);
+        }
+        let town_wood = state.storage.get(entity_key(TOWN_ENTITY)).unwrap().wood;
+        state.take_wood_at(TOWN_ENTITY, town_wood);
+        check(&state);
+        state.take_wood_at(storages[0], 10);
+        check(&state);
+        // A topology change must drop the retained ranking.
+        let extra = Cell::new(GRID_WIDTH / 2, GRID_HEIGHT - 3);
+        state.store_wood_at(TOWN_ENTITY, 40);
+        state
+            .apply(Command::PlaceStorageHouse {
+                x: extra.x,
+                z: extra.z,
+            })
+            .expect("extra storage should be buildable");
+        let extra = building_entity_at(&state, BuildingKind::StorageHouse, extra);
+        state.store_wood_at(extra, 10);
+        check(&state);
+    }
+
+    #[test]
     fn tower_is_inactive_until_workers_deliver_its_material() {
         let mut state = GameState::new(13);
         let cell = first_buildable_cell(&state);
