@@ -53,7 +53,7 @@ jobs:
 
       - name: Install pinned Rust toolchain
         if: steps.scope.outputs.docs_only != 'true'
-        run: rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy
 
       - name: Format Rust workspace
         if: steps.scope.outputs.docs_only != 'true'
@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
       - name: Install pinned Rust toolchain
-        run: rustup toolchain install 1.98.0 --profile minimal
+        run: rustup toolchain install stable --profile minimal
 
       - name: Replay opening defense integration trace
         run: cargo test -p raid-defense-core --test opening_defense
@@ -93,10 +93,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: 1.4.3
+          bun-version: latest
 
       - name: Install pinned Rust toolchain
-        run: rustup toolchain install 1.98.0 --profile minimal
+        run: rustup toolchain install stable --profile minimal
 
       - name: Install wasm-pack
         uses: moritzbrantner/reusable-workflows/.github/actions/install-verified-wasm-cli@e60855ad67f3dad72c283c355d544d6d296241d7
@@ -131,10 +131,10 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: 1.4.3
+          bun-version: latest
 
       - name: Install pinned Rust toolchain
-        run: rustup toolchain install 1.98.0 --profile minimal
+        run: rustup toolchain install stable --profile minimal
 
       - name: Install wasm-pack
         uses: moritzbrantner/reusable-workflows/.github/actions/install-verified-wasm-cli@e60855ad67f3dad72c283c355d544d6d296241d7
