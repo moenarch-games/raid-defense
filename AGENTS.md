@@ -121,3 +121,7 @@
 - Mobile controls must not depend on hover, tiny coordinate fields, or pixel-precise taps. Keep primary touch targets at least 44 CSS pixels tall/wide, respect safe-area insets, and keep build/raid actions reachable without covering the battlefield unnecessarily.
 - The battlefield should support direct touch manipulation: tap selects or places the armed building, drag orbits, and pinch zooms. Camera gestures must not accidentally issue grid-selection or gameplay commands.
 - Preserve a precise mobile fallback for choosing a neighboring grid cell so players are not forced to hit a small 3D tile accurately. That fallback may preview/place the same armed ghost, but it must remain optional rather than restoring tile-first building placement.
+
+## Pull-request integration
+
+Follow the current shared `coding-agent-conventions` rule `GIT-006` for approved PR integration, including explicit merge-queue submission when ready. Preserve this repository's review, validation, dependency, and owner-approval requirements.
